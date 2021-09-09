@@ -14,7 +14,7 @@ This release does not contain any UI component. The usage and login/logout are c
 ## Limitations
 
 - Building this software from source needs a persistent network connection. It is advised to use tmux or screen when doing docker build.
-- ASR Service may not infer text from speech correctly because they are trained on publicly available data.
+- ASR Service may not infer text from speech correctly because they are trained on publicly available data and it supports only US english accents.
 - TTS may have quality issues for small sentences.
 - TTS may have quality issues with acronyms since it is trained with publicly available data.
 - Rasa 1.x generates at times different model with the same input training data.
