@@ -1,0 +1,35 @@
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Configuration for Rasa NLU.
+# https://rasa.com/docs/rasa/nlu/components/
+language: en
+pipeline:
+  - name: WhitespaceTokenizer
+  - name: RegexFeaturizer
+  - name: LexicalSyntacticFeaturizer
+  - name: CountVectorsFeaturizer
+  - name: CountVectorsFeaturizer
+    analyzer: "char_wb"
+    min_ngram: 1
+    max_ngram: 4
+  - name: DIETClassifier
+    epochs: 200
+    random_seed: 10
+  - name: EntitySynonymMapper
+  - name: ResponseSelector
+    epochs: 200
+    random_seed: 10
+
+# Configuration for Rasa Core.
+# https://rasa.com/docs/rasa/core/policies/
+policies:
+  - name: MemoizationPolicy
+  - name: TEDPolicy
+    max_history: 1
+    epochs: 200
+  - name: MappingPolicy
+  - name: FallbackPolicy
+    nlu_threshold: 0.7
+    core_threshold: 0.4
+    fallback_action_name: "action_default_fallback"

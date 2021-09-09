@@ -1,0 +1,7 @@
+numba==0.49.0
+numpy==1.19.5
+scipy==1.5.4
+tqdm
+librosa==0.8.0
+pyyaml
+envparse

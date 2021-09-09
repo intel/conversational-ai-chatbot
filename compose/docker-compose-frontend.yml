@@ -1,0 +1,46 @@
+---
+
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+version: '3.1'
+
+volumes:
+  zmq_ipc_vol:
+    external: true
+
+
+services:
+  wave_ingestion:
+    image: "audio-ingester:${TAG}"
+    environment:
+      - OUTPUT_ADDR=ipc:///feeds/0
+      - WAVE_PATH=/audios
+      #- WAVE_FILES=audio0.wav,audio1.wav,audio2.wav,audio3.wav
+      - OUTPUT_TOPIC=audio
+      - INPUT_ADDR=ipc:///feeds/11
+      - INPUT_TOPIC=userloggedin
+      - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      - LOG_LEVEL=info
+    volumes:
+      #- ./audios:/audios
+      - zmq_ipc_vol:/feeds
+    command: ["python3", "/app/src/main.py"]
+    depends_on:
+     - tts
+  tts:
+    image: "tts:${TAG}"
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+      - INPUT_ADDR=ipc:///feeds/2
+      - INPUT_TOPIC=nlp
+      - OUTPUT_ADDR=ipc:///feeds/3
+      - OUTPUT_TOPIC=tts
+      - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      - LOG_LEVEL=info
+      - PLAY_AUDIO=1
+    command: ["./run.sh"]
+    volumes:
+      - zmq_ipc_vol:/feeds
+

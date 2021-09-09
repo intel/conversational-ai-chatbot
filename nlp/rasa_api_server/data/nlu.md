@@ -1,0 +1,270 @@
+## intent:greet
+- hey
+- hello
+- hi
+- hi there
+- HI
+- hi!
+- Hi
+- good morning
+- good evening
+- hey there
+
+## intent:goodbye
+- bye
+- goodbye
+- see you around
+- see you later
+- Good Bye
+- Good bye
+- GoodBye
+- got to go
+- gotta go
+- need to go
+- good bye
+
+## intent:affirm
+- yes
+- indeed
+- of course
+- that sounds good
+- correct
+
+## intent:deny
+- no
+- never
+- I don't think so
+- don't like that
+- no way
+- not really
+
+## intent:out_of_scope
+- car loan
+- house loan
+- personal loan
+- EMI
+- pre EMI
+- repay personal loan
+- i want to have an ice cream
+- what is the square root of 5
+- I want to know the weather
+- what is the meaning of life.
+- Fridge Isn't Running
+- my tv isn't working
+- I want a pizza
+- my washing machine isn't working
+- what year is it
+- order a pizza
+- I want to order a pizza
+- what is the weather today
+- what is the weather
+- what the weather today ?
+- hows the weather
+- tell me a joke
+- Can I get a hamburger?
+- Can YouTube talk?
+- Can you call me back ?
+- Can you give me your datacenter's password
+- Can you give me your datacenter's password?
+- Can you make sandwiches?
+- Can you please send me an uber
+- ofif fsdfafsfs
+- my details for twitter
+- my details for facebook
+- i want to login with my reddit
+- can you see my friends on instagram
+- is it raining?
+- what is the weather outside
+- i lost my
+- i lost my wallet
+- i lost my credit card
+- i lost my debit card
+- i have my car keys stolen
+- show me available data
+- where is my data for AI model
+- can i know your name
+- how much weigth do i have to maintain
+- i for got my pin number
+- my card is stuck
+- what services are available
+- show me something that can make me happy
+- [sbi](bank_name)
+- [bank of pune](bank_name)
+- [city bank](bank_name)
+- list [city bank](bank_name)
+- liste cant [city bank](bank_name)
+- apply for personal loan with [city bank](bank_name)
+- ATM
+- cash machine
+- i cant do this
+- cant you do this ?
+- i cant sing
+- i cant make a list
+- cant you make a list for me
+- what is minimum balance maintainance
+- what is maximum balance maintainance
+- what is average balance maintainance
+- how much balance should i maintain ?
+- can i see my documents
+- can i see you
+- i want to open an at this bank
+- can i open an
+- want to use these cards that i have
+- you cant do this
+- why cant you do this
+- i want to know the details on rate of interest of my
+- i want to know how to close the  in this bank
+- i want to request for statement
+- i want to get bank of
+- can i get details of my
+- i want to covert my salary
+- i want to create a fixed deposit
+- minimum balance in my
+- minimum and maximum cash
+- maximum amount
+- maximum amount received by the beneficiary
+- PIN
+- forgets PIN or card is captured
+- what documents need to submitted
+- what documents need to submitted for opening
+- can these cards be used at any country
+- show account of [facebook](entity_name)
+- show account for [twitter](entity_name)
+- list account of [twitter](entity_name)
+- show data balance
+- i lost my balance
+- how frequently will I receive my account statement
+- what documents need to be submitted for account opening at [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- How can I close my account
+- i want to convert my savings account to salary account
+
+## intent:getbanks
+- list banks for me
+- show me the banks list
+- what banks are supported?
+- what banks are there?
+- which banks are there?
+- can you show me list of banks
+- list bank
+- list bank for me
+- show me list of bank
+- list banks
+- can you show me list of bank
+
+## intent:get_accounts_bank
+- list of accounts at [city bank](bank_name)
+- list of accounts it [city bank](bank_name)
+- list account for [city bank](bank_name)
+- what are the accounts for [city bank](bank_name)
+- show my accounts for [city bank](bank_name)
+- show my account for [city bank](bank_name)
+- can i get my account details for [city bank](bank_name)
+- what is my account number for [city bank](bank_name)
+- display my account number for [city bank](bank_name)
+- show me the number of accounts i have in [city bank](bank_name)
+- how many number of account do i have in [city bank](bank_name)
+- please flash my account number  for [city bank](bank_name)
+- can you tell me my accounts for [city bank](bank_name)
+- how many accounts does [city bank](bank_name) hold of mine
+- what is my accounts details for [city bank](bank_name)
+- give me my account for [city bank](bank_name)
+- list accounts for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- get my accounts
+- list my accounts
+- i would like to know my account details
+- Give me my account details
+- show account at [sbi](bank_name)
+- lizerunt for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+
+## intent:get_atms_for_bank
+- show cash machine for [city bank](bank_name)
+- show atms for [city bank](bank_name)
+- list of atms for [city bank](bank_name)
+- list of cash machine for [city bank](bank_name)
+- where are cash machines of [city bank](bank_name)
+- where are atms of [city bank](bank_name)
+- showd ash machines t [city bank](bank_name)
+- where is the cash machine for [city bank](bank_name)
+- help me find cash machine for [city bank](bank_name)
+- location of cash machine [city bank](bank_name)
+- where is the atm for [city bank](bank_name)
+- where can i find atm for [city bank](bank_name)
+- can you find me the location for nearest atm for [city bank](bank_name)
+- show me where can i find atm for [city bank](bank_name)
+- are there any atm near by for [city bank](bank_name)
+- are there any cash machine near by for [city bank](bank_name)
+- can you locate any atm for [city bank](bank_name)
+- can you locate any cash machine for [city bank](bank_name)
+- fetch me the nearest atm for [city bank](bank_name)
+- fetch me the nearest cash machine for [city bank](bank_name)
+- tell me where is the atm
+- tell me where is the cash machine
+- how do i get to the atm for [city bank](bank_name)
+- where do i withdraw my cash
+- is there any atm in my area
+- show atms for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- show nearest atms for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- show atm [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- where can I withdraw cash
+- tell me the atm near [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"} branch
+- list me the atms of [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- where can I find atm of [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- find me the nearest cash machine
+- where is the nearest cash machine
+- is there any nearby cash machine
+- show cash machine for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- so cash machine for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+
+## intent:get_account_info_bank
+- show balance for [1911mc10](account_number) at [city bank](bank_name)
+- show account  balance for [1911mc10](account_number) of [city bank](bank_name)
+- show balance for account [BP00000INT](account_number) of [city bank](bank_name)
+- show balance for account [1911mc10](account_number) of [city bank](bank_name)
+- show balance [1911mc10](account_number) of [city bank](bank_name)
+- what is my balance [1911mc10](account_number) of [city bank](bank_name)
+- tell me my account balance [1911mc10](account_number) of [city bank](bank_name)
+- what is my account balance [1911mc10](account_number) of [city bank](bank_name)
+- what is my available account balance [1911mc10](account_number) of [city bank](bank_name)
+- tell me my available balance [1911mc10](account_number) of [city bank](bank_name)
+- can i know what is my account balance [1911mc10](account_number) of [city bank](bank_name)
+- show balance
+- can i see my balance
+- can you tell me balance I have in my account  [1911mc10](account_number) of [city bank](bank_name)
+- can you display my account balance for  my account  [1911mc10](account_number) of [city bank](bank_name)
+- How much money is on my account [1911mc10](account_number) of [city bank](bank_name)
+- How much money is on my account
+- whats my current balance
+- Whats left on my account?
+- How much do I have on that account?
+- show me the balance for my account
+- i want to know what is my balance in my account
+- i need to know my balance
+- tell me the balance
+- show balance for my account
+- I would like to know my account balance
+- show balance for [1911mc10](account_number) at [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- so balance for account
+
+## intent:get_capability
+- what can you do?
+- what do you know?
+- tell me something about yourself.
+- what is your domain
+- how can you help me
+- please help me
+- i want your help
+- i need your help
+
+## intent:bot_challenge
+- are you a bot?
+- are you a human?
+- am I talking to a bot?
+- am I talking to a human?
+
+## synonym:Bank-of-Pune
+- city bank
+- citi bank
+- Citi bank
+
+## lookup:bank_name
+  data/lookup_tables/banks.txt

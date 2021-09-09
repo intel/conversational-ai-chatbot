@@ -1,0 +1,87 @@
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+actions:
+- action_default_fallback
+- action_get_atms
+- action_get_banks
+- action_list_account_balance
+- action_list_accounts
+- action_logout
+- utter_default
+- utter_goodbye
+- utter_greet
+- utter_how_can_i_help
+- utter_iamabot
+- utter_insufficient_info_account
+- utter_need_affirmation_account
+- utter_supported
+- utter_supported_banks
+entities:
+- account_number
+- bank_name
+- entity_name
+intents:
+- get_account_info_bank
+- get_atms_for_bank
+- get_accounts_bank
+- out_of_scope
+- greet
+- goodbye
+- stop
+- affirm
+- deny
+- getbanks
+- get_account_info
+- get_transactions
+- get_entitlement
+- add_entitlement
+- get_capability
+- bot_challenge
+responses:
+  utter_default:
+  - text: Sorry, we do not support such queries. Please try again
+  - text: Sorry, I could not understand.
+  - text: I didn't get it. would you mind asking again.
+  - text: Beats me. Please try saying something else.
+  utter_goodbye:
+  - text: Bye
+  - text: Good Bye. See you Soon.
+  - text: Nice talking to you. See you Later
+  - text: It was a pleasure talking to you. Take Care.
+  - text: Have a great day
+  utter_greet:
+  - text: Hey! How are you?
+  - text: Welcome to the future of banking.
+  utter_how_can_i_help:
+  - text: How can I help you
+  - text: What would like me to do today
+  - text: How may I assist you
+  utter_iamabot:
+  - text: I am a bot, powered by Rasa.
+  - text: I am a banking chatbot, powered by Rasa and Intel
+  - text: I am an Intel powered digital assistant for a new generation banking experience
+  utter_insufficient_info_account:
+  - text: Please ask about account information
+  - text: Please ask again about accounts
+  - text: Please try other queries
+  utter_need_affirmation_account:
+  - text: Would you like information about savings account
+  - text: Do you mean savings account?
+  utter_supported:
+  - text: You can talk to me as you would talk to a bank official. Try asking me a
+      few questions about your accounts.
+  - text: I can help you witness a touchless banking experience. I can fetch your
+      savings account balance and more.
+  utter_supported_banks:
+  - text: I can give you information from {bank_name}
+  - text: I know about {bank_name}
+session_config:
+  carry_over_slots_to_new_session: true
+  session_expiration_time: 60
+slots:
+  account_number:
+    type: text
+  bank_name:
+    initial_value: Bank-of-Pune
+    type: text

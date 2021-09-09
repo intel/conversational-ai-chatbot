@@ -1,0 +1,5 @@
+numpy>=1.18.1
+webrtcvad
+pyzmq>=18.1.0
+soundcard
+envparse

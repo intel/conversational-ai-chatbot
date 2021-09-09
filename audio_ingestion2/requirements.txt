@@ -1,0 +1,6 @@
+numpy>=1.18.1
+webrtcvad
+pocketsphinx
+requests
+scipy
+envparse

@@ -1,0 +1,143 @@
+---
+
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+version: '3.1'
+
+networks:
+  nlprasa:
+    driver: overlay
+
+volumes:
+  zmq_ipc_vol:
+    external: true
+
+
+secrets:
+  authz_tls_cert:
+    external: true
+  authz_tls_key:
+    external: true
+  nlp_tls_cert:
+    external: true
+  nlp_tls_key:
+    external: true
+  nlp_tls_cacert:
+    external: true
+  rasaw_tls_cert:
+    external: true
+  rasaw_tls_key:
+    external: true
+  api_tls_cert:
+    external: true
+  api_tls_key:
+    external: true
+  action_tls_cert:
+    external: true
+  action_tls_key:
+    external: true
+  jwtsecret:
+    external: true
+  jwtalgo:
+    external: true
+
+
+services:
+  authz:
+    image: "authz:${TAG}"
+    environment:
+      - TOKEN_SERVER_ADDR=ipc:///feeds/19
+      - OUTPUT_ADDR=ipc:///feeds/11
+      - OUTPUT_TOPIC=userloggedin
+      - SESSION_ADDR=ipc:///feeds/9
+      - DEVELOPMENT=1
+      - D_USERNAME=<add username here>
+      - D_PASS=<add obp pass here>
+      - D_APIKEY=<add obp key here>
+      - D_TOKEN=<optionally may add token here>
+      - LOG_LEVEL=info
+      - TLS_KEY=authz_tls_cert
+      - TLS_CERT=authz_tls_key
+      - http_proxy
+      - https_proxy
+    command: ["python3", "/app/main.py"]
+    secrets:
+      - authz_tls_cert
+      - authz_tls_key
+    tty: true
+    stdin_open: true
+    volumes:
+      - zmq_ipc_vol:/feeds
+    depends_on:
+      - asr_speech
+  asr_speech:
+    image: "${ASR_IMAGE}:${TAG}"
+    environment:
+      - OUTPUT_ADDR=ipc:///feeds/1
+      - OUTPUT_TOPIC=text
+      - INPUT_TOPIC=audio
+      - INPUT_ADDR=ipc:///feeds/0
+      - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      - LOG_LEVEL=info
+    volumes:
+      - zmq_ipc_vol:/feeds
+    depends_on:
+      - nlp_app
+  nlp_app:
+    image: "nlp_app:${TAG}"
+    hostname: nlp_app
+    networks:
+      - nlprasa
+    environment:
+      - INPUT_ADDR=ipc:///feeds/1
+      - INPUT_TOPIC=text
+      - OUTPUT_ADDR=ipc:///feeds/2
+      - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      - OUTPUT_TOPIC=nlp
+      - LOG_LEVEL=info
+      - JWT_SECRET=jwtsecret
+      - TLS_CERT=nlp_tls_cert
+      - TLS_KEY=nlp_tls_key
+      - TLS_CACERT=nlp_tls_cacert
+    command: ["python3", "/app/main.py"]
+    secrets:
+      - nlp_tls_cert
+      - nlp_tls_key
+      - jwtsecret
+      - nlp_tls_cacert
+    volumes:
+      - zmq_ipc_vol:/feeds
+    depends_on:
+     - rasa_action
+  rasa_action:
+    image: "action_server:${TAG}"
+    hostname: rasa_action
+    networks:
+      - nlprasa
+    environment:
+      - SANIC_JWTSECRET=jwtsecret
+      - SANIC_JWTALGORITHM=jwtalgo
+      - TOKEN_SERVER_ADDR=ipc:///feeds/19
+      - SANIC_TLS_CERT=rasaw_tls_cert
+      - SANIC_TLS_KEY=rasaw_tls_key
+      - SANIC_SERVERCERT=rasaw_tls_cert
+      - SANIC_SERVERKEY=rasaw_tls_key
+      - ACTION_TLS_CERT=action_tls_cert
+      - ACTION_TLS_KEY=action_tls_key
+      - API_TLS_CERT=/run/secrets/api_tls_cert
+      - API_TLS_KEY=/run/secrets/api_tls_key
+      - http_proxy
+      - https_proxy
+    volumes:
+      - zmq_ipc_vol:/feeds
+    secrets:
+      - rasaw_tls_cert
+      - rasaw_tls_key
+      - api_tls_cert
+      - api_tls_key
+      - action_tls_cert
+      - action_tls_key
+      - jwtsecret
+      - jwtalgo
+

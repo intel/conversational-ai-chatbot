@@ -1,0 +1,46 @@
+---
+
+# Copyright (C) 2021 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+version: '3.1'
+
+volumes:
+  zmq_ipc_vol:
+    external: true
+
+
+services:
+  audio_ingestion:
+    image: "audio-ingester2:${TAG}"
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+      - INPUT_ADDR=ipc:///feeds/11
+      - INPUT_TOPIC=userloggedin
+      - OUTPUT_ADDR=ipc:///feeds/0
+      - OUTPUT_TOPIC=audio
+      - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      - WAKE_UP_WORD=respeaker
+      - LOG_LEVEL=info
+    command: ["bash", "/app/run.sh"]
+    volumes:
+      - zmq_ipc_vol:/feeds
+    depends_on:
+     - tts
+  tts:
+    image: "tts:${TAG}"
+    devices:
+      - /dev/snd:/dev/snd
+    environment:
+      - INPUT_ADDR=ipc:///feeds/2
+      - INPUT_TOPIC=nlp
+      - OUTPUT_ADDR=ipc:///feeds/3
+      - OUTPUT_TOPIC=tts
+      - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      - LOG_LEVEL=info
+      - PLAY_AUDIO=1
+    command: ["./run.sh"]
+    volumes:
+      - zmq_ipc_vol:/feeds
+
