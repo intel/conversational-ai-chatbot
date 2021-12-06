@@ -6,7 +6,7 @@
 The **Conversational AI Chat Bot** has the following components:
 
 - `ASR Service`
-    ASR(Automatic Speech Recognition) converts the speech audio to text. It can be KALDI&trade; or deepspeech&trade;
+    ASR(Automatic Speech Recognition) converts the speech audio to text. It can be one of these ([KALDI&trade;](https://docs.openvinotoolkit.org/latest/omz_demos_text_to_speech_demo_python.html), [deepspeech&trade;](https://docs.openvinotoolkit.org/latest/omz_demos_speech_recognition_deepspeech_demo_python.html); [Quartznet](https://docs.openvinotoolkit.org/latest/omz_demos_speech_recognition_quartznet_demo_python.html), [huggingface wave2vec](https://huggingface.co/facebook/wav2vec2-base-960)
 
 - `Audio Ingestion Service`
     It can record speech audio via microphone. Additionally it is possible to give a pre-recoded audio input via wave files. This is useful while remote development and debugging.

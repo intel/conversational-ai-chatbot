@@ -21,20 +21,25 @@ from rasa_sdk.events import SlotSet
 import logging as log
 import zmq_integration_lib as z
 import os
+import time
+from threading import Thread
 
 
 def get_jwt():
     c = z.RPCClient(os.environ["TOKEN_SERVER_ADDR"], z.supported_cmds)
     return c.get_token()
+    
+    return c
 
 
 def logout(token):
+    time.sleep(2)
     c = z.RPCClient(os.environ["TOKEN_SERVER_ADDR"], z.supported_cmds)
     return c.logout(token)
 
+
 level = logging.ERROR
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=level)
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=level)
 logging.root.setLevel(level)
 logger = logging.getLogger()
 logger.setLevel(level)
@@ -95,7 +100,10 @@ class ActionGetBanks(Action):
         list_of_banks = bank_.get_banks()
         # log.info("{}".format(list_of_banks))
         try:
-            def names(x): return "  {0}".format(x["full_name"])
+
+            def names(x):
+                return "  {0}".format(x["full_name"])
+
             banknames = map(names, list_of_banks)
             list_banks = list(banknames)
             log.info("".format(list_banks))
@@ -163,8 +171,7 @@ class ActionListAtms(Action):
         if not bank_name or bank_name not in supported_banks:
             dispatcher.utter_message(
                 template="utter_supported_banks",
-                bank_name=",".join(
-                    list(map(proper_bank_name, supported_banks))),
+                bank_name=",".join(list(map(proper_bank_name, supported_banks))),
             )
             return []
         conn = backend_helper()
@@ -180,13 +187,40 @@ class ActionListAtms(Action):
                 list_of_atms[0]["address"]["line_1"]
             )
         except (KeyError, IndexError):
-            atm_response = "No atms found for {}".format(
-                proper_bank_name(bank_name))
+            atm_response = "No atms found for {}".format(proper_bank_name(bank_name))
 
         dispatcher.utter_message(text=atm_response)
 
         return []
 
+def _get_account_details(atm_, bank_name, dispatcher):
+
+    list_of_accounts = atm_.get_accounts_held(bank_name)
+    if list_of_accounts is None:
+        texti = "No account found for bank: {}".format(proper_bank_name(bank_name))
+        dispatcher.utter_message(text=texti)
+        return []
+
+    def names(x):
+        return "{0}".format(x["id"])
+
+        # log.info("list of accounts {}".format(list_of_accounts))
+    account_number = None
+    total_accounts = len(list_of_accounts)
+    textp = "You have {} savings accounts with our bank".format(total_accounts)
+    try:
+        accountnames = map(names, list_of_accounts)
+        texti = "\n".join(list(accountnames))
+        account_number = texti.split("\n")[0]
+        # log.info("Set slot: {}".format(account_number))
+    except Exception:
+        texti = "No account found for bank: {}".format(proper_bank_name(bank_name))
+    #dispatcher.utter_message(text=textp)
+    account_names = map(names, list_of_accounts)
+    value=":".join(list(account_names))
+
+    return value , account_number
+    
 
 class ActionListAccountsAtBank(Action):
     def name(self) -> Text:
@@ -215,35 +249,16 @@ class ActionListAccountsAtBank(Action):
         if bank_name not in supported_banks:
             dispatcher.utter_message(
                 template="utter_supported_banks",
-                bank_name=",".join(
-                    list(map(proper_bank_name, supported_banks))),
+                bank_name=",".join(list(map(proper_bank_name, supported_banks))),
             )
             return []
 
-        list_of_accounts = atm_.get_accounts_held(bank_name)
-        if list_of_accounts is None:
-            texti = "No account found for bank: {}".format(proper_bank_name(bank_name))
-            dispatcher.utter_message(text=texti)
-            return []
-
-        def names(x): return "{0}".format(x["id"])
-        # log.info("list of accounts {}".format(list_of_accounts))
-        account_number = None
-        total_accounts = len(list_of_accounts)
-        textp = "You have {} savings accounts with our bank.".format(
-            total_accounts)
-        try:
-            accountnames = map(names, list_of_accounts)
-            texti = "\n".join(list(accountnames))
-            account_number = texti.split("\n")[0]
-            # log.info("Set slot: {}".format(account_number))
-        except Exception:
-            texti = "No account found for bank: {}".format(proper_bank_name(bank_name))
+        value, account_number = _get_account_details(atm_, bank_name, dispatcher)
+        total_accounts = len(value.split(':'))
+        textp = "You have {} savings accounts with our bank".format(total_accounts)
         dispatcher.utter_message(text=textp)
 
-        account_names = map(names, list_of_accounts)
-        # print (account_names)
-        return [SlotSet(key="account_number", value=":".join(list(account_names)))]
+        return [SlotSet(key="account_number", value=value)]
 
 
 class ActionListAccountBalance(Action):
@@ -262,32 +277,31 @@ class ActionListAccountBalance(Action):
         # if slots are not filled, fallback to default reply or other replies
         # asking for slots
         account_numbers = tracker.get_slot("account_number")
-        if not account_numbers:
-            # go for fallback reply
-            bank_name_ = tracker.get_slot("bank_name")
-            dispatcher.utter_message(
-                template="utter_insufficient_info_account",
-                bank_name=proper_bank_name(bank_name_),
-            )
-            return []
 
-        account_numbers = tracker.get_slot("account_number").split(":")
         bank_name = tracker.get_slot("bank_name")
 
         conn = backend_helper()
+        atm_ = accounts.Account(conn)
 
-        def get_account_info(conn, bank_name, account_id):
+        if not account_numbers:
+            value, account_number = _get_account_details(atm_, bank_name, dispatcher)
+        else:
+            value  = tracker.get_slot('account_number')
+
+        account_numbers = value.split(":")
+
+        def get_account_info(atm_, bank_name, account_id):
             # log.info("Bank: {0} AccountNumber: {1}".format(bank_name, account_id))
 
-            atm_ = accounts.Account(conn)
+            #atm_ = accounts.Account(conn)
+
             list_of_accounts = atm_.get_account_by_id(bank_name, account_id)
-            # log.info (list_of_accounts)
+            #log.info(list_of_accounts)
             try:
                 names = list_of_accounts["balance"]
                 # accountnames = map(names, list_of_accounts)
                 currency_d = {"INR": "Rupees", "EUR": "EURO"}
-                texti = "{0} {1}".format(
-                    names["amount"], currency_d[names["currency"]])
+                texti = "{0} {1}".format(names["amount"], currency_d[names["currency"]])
             except Exception as msg:
                 print("Got an exception ", msg)
                 texti = "Sorry Couldn't get balance"
@@ -296,13 +310,17 @@ class ActionListAccountBalance(Action):
                 return (str(list_of_accounts["number"])[-4:], texti)
             return (None, None)
 
-        # print (account_numbers)
+        #print(account_numbers)
+
         for ac in account_numbers:
-            num, amt = get_account_info(conn, bank_name, ac)
-            texti = "Balance for account ending with {} is {}".format(num, amt)
+            num, amt = get_account_info(atm_, bank_name, ac)
+            texti = "The balance for the savings account ending with {} is {}".format(
+                num, amt
+            )
             dispatcher.utter_message(text=texti)
 
-        return []
+        return [SlotSet(key="account_number", value=value)]
+        
 
 
 class ActionLogout(Action):
@@ -316,8 +334,8 @@ class ActionLogout(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
         log.info("Action Called {}".format(self.name()))
-        logout(get_jwt())
-
+        logout_async = Thread(target=logout, args=(get_jwt()), daemon=True)
+        logout_async.start()
         # Clear slots from tracker
         dispatcher.utter_message(template="utter_goodbye")
 

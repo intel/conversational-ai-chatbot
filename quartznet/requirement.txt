@@ -1,0 +1,5 @@
+pyarrow==1.0.0
+datasets
+librosa
+torch==1.9.1
+envparse

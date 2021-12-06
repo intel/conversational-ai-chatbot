@@ -16,11 +16,13 @@ services:
     devices:
       - /dev/snd:/dev/snd
     environment:
+      # Set input/output addresses 
       - INPUT_ADDR=ipc:///feeds/11
       - INPUT_TOPIC=userloggedin
       - OUTPUT_ADDR=ipc:///feeds/0
       - OUTPUT_TOPIC=audio
       - AUTHZ_SERVER_ADDR=ipc:///feeds/9
+      # Set Wake up word to start audio ingestion 
       - WAKE_UP_WORD=respeaker
       - LOG_LEVEL=info
     command: ["bash", "/app/run.sh"]
@@ -28,19 +30,33 @@ services:
       - zmq_ipc_vol:/feeds
     depends_on:
      - tts
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
   tts:
     image: "tts:${TAG}"
     devices:
       - /dev/snd:/dev/snd
     environment:
+      # Set input/output addresses 
       - INPUT_ADDR=ipc:///feeds/2
       - INPUT_TOPIC=nlp
       - OUTPUT_ADDR=ipc:///feeds/3
       - OUTPUT_TOPIC=tts
       - AUTHZ_SERVER_ADDR=ipc:///feeds/9
       - LOG_LEVEL=info
+      # Enable PLAY_AUDIO for playback of TTS audio
       - PLAY_AUDIO=1
+      # Set the ALSA_CARD with the name of OUTPUT device 
+      - ALSA_CARD=<add sound card name here>
     command: ["./run.sh"]
     volumes:
       - zmq_ipc_vol:/feeds
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 

@@ -8,6 +8,7 @@ echo "Download and convert deepspeech model  to openvino IR format"
 mkdir -p tmp/venv
 python3 -m venv tmp/venv
 source tmp/venv/bin/activate
+python3 -m pip install --upgrade pip
 python3 -mpip install wheel numpy numpy tqdm numba==0.49.0 librosa pyyaml
 
 # source openvino

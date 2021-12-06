@@ -4,6 +4,7 @@
 FROM python:3.6-slim-buster
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
+# Creating Rasa base image 
 RUN mkdir -p /app
 COPY nlp/rasa_actions_server/requirements.txt /app/
 RUN pip3 install --upgrade pip

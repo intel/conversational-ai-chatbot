@@ -3,7 +3,7 @@
 - [Release Notes](#release-notes)
 	- [Limitations](#limitations)
 
-***Conversational AI Chat Bot V1.0***
+***Conversational AI Chat Bot V1.5***
 
 This software release has the following software components delivered as `dockerfiles` and python packages. The pre-build images or binaries are not hosted anywhere, so the software needs to be build on the target machine. Instructions to build the software from the `dockerfiles`  are included in _README.md_.  All component folders have _README.md_ file with instructions to build and use them. The `dockerfiles` will pull the required AI Models from OPENVINO&trade; model zoo while building, there is not need to install or download the models separately.  The scripts to generate keys and security features are also provided.
 
@@ -14,7 +14,7 @@ This release does not contain any UI component. The usage and login/logout are c
 ## Limitations
 
 - Building this software from source needs a persistent network connection. It is advised to use tmux or screen when doing docker build.
-- ASR Service may not infer text from speech correctly because they are trained on publicly available data and it supports only US english accents.
+- ASR Service may not infer text from speech correctly because they are trained on publicly available data.
 - TTS may have quality issues for small sentences.
 - TTS may have quality issues with acronyms since it is trained with publicly available data.
 - Rasa 1.x generates at times different model with the same input training data.

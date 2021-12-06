@@ -13,6 +13,7 @@ RUN apt update -y \
     && apt  install -y  python3-pip swig git libpulse-dev libasound2-dev python3-pyaudio
 RUN pip3 install -r /app/requirements.txt
 
+# Downloading Respeaker SDK 
 RUN git clone https://github.com/respeaker/respeaker_python_library.git 
 COPY audio_ingestion2/_config.py respeaker_python_library/examples/_config.py
 COPY audio_ingestion2/main.py respeaker_python_library/examples/main.py

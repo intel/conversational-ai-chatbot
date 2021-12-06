@@ -53,7 +53,7 @@ with open('test.wav', 'wb') as f:
 
 ```
 
-The output format is a `wave` file buffer. The bitrate of `wave` is 22050 and sample width is 2.
+The output format is a `wave` file buffer. The bitrate of `wave` is 16K and sample width is 2.
 
 ## Limitations
 

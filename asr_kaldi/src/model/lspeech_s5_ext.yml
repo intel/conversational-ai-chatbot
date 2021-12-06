@@ -21,26 +21,30 @@ topologies:
       - name: FP32/speech_recognition_config.template
         size: 1267
         sha256: 6cd4897386b939e571a8c9b9720f21101b3b8aff9dd9796e81f49cd898d14543
-        source: https://download.01.org/opencv/2020/openvinotoolkit/2020.1/models_contrib/speech/kaldi/librispeech_s5/OV/speech_recognition_config.template
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/OV/speech_recognition_config.template
       - name: FP32/lspeech_s5_ext.feature_transform
         size: 3056
         sha256: 074925603942d662f95ce9d5a1eb29b8b933d3dd98371285b1af9437da4c46b2
-        source: https://download.01.org/opencv/2020/openvinotoolkit/2020.1/models_contrib/speech/kaldi/librispeech_s5/OV/lspeech_s5_ext.feature_transform
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/OV/lspeech_s5_ext.feature_transform
       - name: FP32/lspeech_s5_ext.xml
-        size: 5329
-        sha256: a97ed9f37dd9ad75b9ce86e95742117535b0f6493c4df6d3c616cfbb862e5300
-        source: https://download.01.org/opencv/2020/openvinotoolkit/2020.1/models_contrib/speech/kaldi/librispeech_s5/OV/lspeech_s5_ext.xml
+        size: 11298
+        sha256: 2ab2ddc7a689eff6779ce2c9b5a5780cbdf5569931436123113623318b6915a6
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/OV/lspeech_s5_ext_v10.xml
       - name: FP32/lspeech_s5_ext.bin
         size: 26764224
-        sha256: bf35171ceb79c0c15484d236be6778492056fd1c1dbf4a27bbbf6902a839294a
-        source: https://download.01.org/opencv/2020/openvinotoolkit/2020.1/models_contrib/speech/kaldi/librispeech_s5/OV/lspeech_s5_ext.bin
+        sha256: 43392c4d053235157c7a5629cd9a752002c2ba4c06917053835fee1ac632d625
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/OV/lspeech_s5_ext_v10.bin
       - name: FP32/hclg.fst
         size: 946851404
         sha256: 140f4b07482809d3dfcb6c5009b99af7f4f4b2ca0d1093e7a758142472fe9091
-        source: https://download.01.org/opencv/2020/openvinotoolkit/2020.1/models_contrib/speech/kaldi/librispeech_s5/OV/hclg.fst
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/OV/hclg.fst
       - name: FP32/labels.bin
         size: 2537784
         sha256: de101e4e7926cfa3fb84469cb3f9c92d8230876321995a7aa662c555126f250c
-        source: https://download.01.org/opencv/2020/openvinotoolkit/2020.1/models_contrib/speech/kaldi/librispeech_s5/OV/labels.bin
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/OV/labels.bin
+      - name: FP32/README.md
+        size: 8128
+        sha256: 80f9a352ae6b98a9cb287e7305ea191da6b2ad080c3cc6cc426878692c793721
+        source: https://storage.openvinotoolkit.org/models_contrib/speech/2021.2/librispeech_s5/README.md
     framework: dldt
     license: https://raw.githubusercontent.com/opencv/open_model_zoo/master/LICENSE

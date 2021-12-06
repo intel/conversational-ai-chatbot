@@ -22,12 +22,12 @@ entities:
 - bank_name
 - entity_name
 intents:
+- get_accounts_bank
+- greet
 - get_account_info_bank
 - get_atms_for_bank
-- get_accounts_bank
-- out_of_scope
-- greet
 - goodbye
+- out_of_scope
 - stop
 - affirm
 - deny
@@ -46,12 +46,11 @@ responses:
   - text: Beats me. Please try saying something else.
   utter_goodbye:
   - text: Bye
-  - text: Good Bye. See you Soon.
-  - text: Nice talking to you. See you Later
-  - text: It was a pleasure talking to you. Take Care.
-  - text: Have a great day
+  - text: Good Bye. Thank you for banking with us. See you Soon.
+  - text: Nice talking to you. Thank you for banking with us. See you Later
+  - text: Thank you for banking with us. It was a pleasure talking to you. Take Care.
+  - text: Thank you for banking with us. Have a great day.
   utter_greet:
-  - text: Hey! How are you?
   - text: Welcome to the future of banking.
   utter_how_can_i_help:
   - text: How can I help you

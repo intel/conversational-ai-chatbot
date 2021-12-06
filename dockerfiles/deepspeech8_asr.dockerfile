@@ -1,27 +1,35 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-FROM openvino/ubuntu18_dev:2020.4 as builder
+FROM openvino/ubuntu18_data_dev:2021.3 as builder
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
 USER root
+# Installing dependencies to download openvino  models 
 RUN apt-get update \
-    && apt-get install -y python3 python3-pip python3-venv wget --no-install-recommends \
+    && apt-get install -y python3 python3-pip python3-venv wget unzip build-essential --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* 
 
+# Downloading Opensource deepspeech models 
 USER openvino
 COPY asr_deepspeech/scripts/download_model.sh /home/openvino/
+RUN pip install wheel
 RUN cd /home/openvino \
     && ./download_model.sh
+RUN cd /home/openvino/tmp/model/python/ctcdecode-numpy  && python3 -m pip wheel .
 
-FROM openvino/ubuntu18_runtime:2020.4
+FROM openvino/ubuntu18_runtime:2021.3
 USER root
 
+# copy the content of the local src directory to the working directory
 COPY asr_deepspeech/src/model /model
 COPY asr_deepspeech/requirements.txt /tmp/requirements.txt
 RUN python3 -mpip install -r /tmp/requirements.txt 
+RUN apt-get update && apt-get install libsndfile1 -y 
+
+# copy downloaded models from the first stage 
 COPY --from=builder /home/openvino/tmp/model /demo
-RUN cd /demo/python/ctcdecode-numpy  && python3 -m pip install .
+RUN cd /demo/python/ctcdecode-numpy  && python3 -m pip install *.whl
 RUN cp -rf /demo/public /model/public && rm -rf /demo
 
 COPY asr_deepspeech/src /app/src/
