@@ -47,10 +47,13 @@ services:
   authz:
     image: "authz:${TAG}"
     environment:
+      # Set input/output addresses 
       - TOKEN_SERVER_ADDR=ipc:///feeds/19
       - OUTPUT_ADDR=ipc:///feeds/11
       - OUTPUT_TOPIC=userloggedin
       - SESSION_ADDR=ipc:///feeds/9
+      # OBP credentials when DEVELOPMENT
+      # variable is set to 1  
       - DEVELOPMENT=1
       - D_USERNAME=<add username here>
       - D_PASS=<add obp pass here>
@@ -71,31 +74,46 @@ services:
       - zmq_ipc_vol:/feeds
     depends_on:
       - asr_speech
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
   asr_speech:
     image: "${ASR_IMAGE}:${TAG}"
     environment:
+      # Set input/output addresses 
       - OUTPUT_ADDR=ipc:///feeds/1
       - OUTPUT_TOPIC=text
       - INPUT_TOPIC=audio
       - INPUT_ADDR=ipc:///feeds/0
       - AUTHZ_SERVER_ADDR=ipc:///feeds/9
       - LOG_LEVEL=info
+      - http_proxy
+      - https_proxy
     volumes:
       - zmq_ipc_vol:/feeds
     depends_on:
       - nlp_app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
   nlp_app:
     image: "nlp_app:${TAG}"
     hostname: nlp_app
     networks:
       - nlprasa
     environment:
+      # Set up Output and Input ports 
       - INPUT_ADDR=ipc:///feeds/1
       - INPUT_TOPIC=text
       - OUTPUT_ADDR=ipc:///feeds/2
       - AUTHZ_SERVER_ADDR=ipc:///feeds/9
       - OUTPUT_TOPIC=nlp
       - LOG_LEVEL=info
+      # TLS for security
       - JWT_SECRET=jwtsecret
       - TLS_CERT=nlp_tls_cert
       - TLS_KEY=nlp_tls_key
@@ -110,12 +128,19 @@ services:
       - zmq_ipc_vol:/feeds
     depends_on:
      - rasa_action
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
   rasa_action:
     image: "action_server:${TAG}"
     hostname: rasa_action
     networks:
       - nlprasa
     environment:
+      # TLS for security
+      # Security for OBP JWT
       - SANIC_JWTSECRET=jwtsecret
       - SANIC_JWTALGORITHM=jwtalgo
       - TOKEN_SERVER_ADDR=ipc:///feeds/19
@@ -140,4 +165,9 @@ services:
       - action_tls_key
       - jwtsecret
       - jwtalgo
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 

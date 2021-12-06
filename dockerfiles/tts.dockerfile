@@ -9,6 +9,7 @@ USER root
 RUN apt-get update \
     && apt-get install -y python3-pip wget zip python3-dev libasound2-dev
 
+# Download TTS open source models 
 COPY tts/tts_openvino /tmp/tts_openvino
 RUN cd /tmp/tts_openvino && ./prepare_and_install.sh download
 

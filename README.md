@@ -1,4 +1,5 @@
 # Conversational AI Chat Bot
+
 - [Conversational AI Chat Bot](#conversational-ai-chat-bot)
 	- [Introduction](#introduction)
 		- [Block Diagram](#block-diagram)
@@ -12,6 +13,10 @@
 		- [Step 4: Dive In](#step-4-dive-in)
 	- [General Guidance](#general-guidance)
 		- [How to build service individually](#how-to-build-service-individually)
+	- [Quickstart](#quickstart)
+		- [*Update the environment variables.*](#update-the-environment-variables)
+		- [Run wave-ingestion](#run-wave-ingestion)
+		- [Run Live Speech Ingestion](#run-live-speech-ingestion)
 	- [Expanding the Reference Implementation](#expanding-the-reference-implementation)
 	- [Release Notes](#release-notes)
 
@@ -61,20 +66,24 @@ To use the chatbot, we need the credentials of an **Open Bank Project** compatib
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/intel/conversational-ai-chatbot.git 
+git clone https://github.com/intel/conversational-ai-chatbot
 
 ```
+
 
 ### Step 2: Build the reference implementation
 
 You must build the provided component services and create local docker images. To do so, run:
 
 ```
-$ sudo chmod a+x build_all_images.sh
-$ build_all_images.sh
+
+$ sudo chmod a+x setup
+$ ./setup build
 ```
 
 NOTE: This command may take a while to run depending on your internet connection and machine specifications.
+
+For development or a quick demo, you can follow the [quickstart instructions here.](#quickstart). Find the [detailed tutorial here](docs/tutorial.docx).
 
 ### Step 3: Start the reference implementation
 
@@ -174,6 +183,12 @@ make deepspeech_asr
 # build kaldi asr
 make kaldi_asr
 
+# build huggingface asr
+make huggingface_asr
+
+# build quartznet_asr
+make quartznet_asr
+
 # build audio ingestion for wave files
 make audio_ingestion
 
@@ -194,6 +209,73 @@ make rasa_action_server
 
 ```
 
+## Quickstart
+
+Use these steps to quickly start with the software. You need to create login credentials first as discussed here. [Login](docs/login.md)
+
+This method is recommended only for development or a quick demo. This requires the user to enter credentials via env variables.  
+
+There are two ways to run the application:
+
+**1. Wav File Ingestion**: A quick test of the RI to illustrate how it responds to speech. Use this method to see the RI run with sample audio files. Use a speaker or headphones as the output device or monitor the log files.
+
+
+**2. Live Speech Ingestion**: An interactive test of the RI that involves speaking words and phrases into a microphone or mic array. Use this method with Seeed ReSpeaker or another device as the input mic. Use a speaker or headphones as the output device or monitor the log files. 
+
+#### *Update the environment variables.*
+
+NOTE: *The default ASR(speech recognition) set via `setenvvars.sh` script is quartznet_asr, in case the user want a different asr, user can edit the `ASR_IMAGE` variable in setenvvarsh.sh to any one of these {kaldi_asr, deepspeech_asr, hugginface_asr.
+Additionally, in case of multiple output devices, we can choose the specific output device by setting the `ALSA_CARD` value. The available card options can be checked via `aplay -l`.* 
+```bash
+# install alsa-utils, if not available
+sudo apt-get install alsa-utils
+aplay -l
+# this lists the sound cards
+export ALSA_CARD=<alsa sound device>
+or
+export ALSA_CARD=''
+# for default device
+
+```
+
+Set env variables.
+```bash
+# set env variables
+source <repo-root>/setenvvars.sh
+# This script is interactive and will prompt the user for credentials and alsa_card value.
+
+```
+
+
+
+#### Run wave-ingestion
+*Run the software using pre-recorded queries.* 
+
+```bash
+./setup run wave_ingestion
+```
+
+The responses of the bot would be heard in the speaker in a short while.
+
+*Stop the software.*
+
+```bash
+./setup stop wave_ingestion
+```
+
+#### Run Live Speech Ingestion
+
+Make sure you have connected a working microphone to the setup.
+
+*Run the live speech*
+```
+./setup run speech_ingestion
+```
+
+*Stop Live Speech*
+```
+./setup stop speech_ingestion
+```
 
 ## Expanding the Reference Implementation
 

@@ -82,11 +82,18 @@ def display_help():
 def _get_login_token():
     print("Enter Credentials:")
     print("Enter Username:")
+    dummy_input = input("Press any Key ")
+    ask_for_input = input("You would be prompted to enter credentials. Press any key to coninue")
     user = input("username: ")
     password = getpass.getpass(prompt="password: ")
     apikey = getpass.getpass(prompt="apikey: ")
-    return obp_helper.get_login_token(user, password, apikey, cert=get_cert())
-
+    token  = obp_helper.get_login_token(user, password, apikey, cert=get_cert())
+    if token == "":
+        print ("Login Failed")
+    else:
+        print ("Login Successful")
+    print ("Press ctrl p Ctrl q to exit")
+    return token
 
 def _get_login_token_dev():
     enabled, user, passwd, apikey, token = _read_env_vars_development_only()

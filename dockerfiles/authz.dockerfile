@@ -14,6 +14,7 @@ COPY integration_library /tmp/integration_library
 RUN cd /tmp/integration_library/zmq_integration_lib \
     && bash install.sh 
 
+# Thin OBP client 
 COPY nlp/obp_api /data/obp_api
 RUN cd /data/obp_api \
     && pip install .

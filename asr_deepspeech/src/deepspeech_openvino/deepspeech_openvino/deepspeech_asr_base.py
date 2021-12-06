@@ -87,26 +87,6 @@ class DeepSpeechASR(object):
         )
         self.net = self.ie.read_network(
             model=self.model_xml, weights=self.model_bin)
-        if "CPU" in self.device:
-            supported_layers = self.ie.query_network(self.net, "CPU")
-            not_supported_layers = [
-                l for l in self.net.layers.keys() if l not in supported_layers
-            ]
-            if len(not_supported_layers) != 0:
-                log.error(
-                    "Following layers are not supported by the plugin for specified device {}:\n {}".format(
-                        self.device, ", ".join(not_supported_layers)
-                    )
-                )
-                # log.error("Please try to specify cpu extensions library path in sample's command line parameters using -l "
-                # "or --cpu_extension command line argument")
-                # sys.exit(1)
-                # TODO: should we raise exceptions or assert here
-                raise Exception(
-                    "Following layers are not supported by the plugin for specified device {}:\n {}".format(
-                        self.device, ", ".join(not_supported_layers)
-                    )
-                )
         return self._load_model_to_device()
 
     @abstractmethod

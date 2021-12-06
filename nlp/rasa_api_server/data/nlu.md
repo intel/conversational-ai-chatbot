@@ -9,6 +9,10 @@
 - good morning
 - good evening
 - hey there
+- start
+- open session
+- good afternoon
+- how does this work
 
 ## intent:goodbye
 - bye
@@ -22,6 +26,11 @@
 - gotta go
 - need to go
 - good bye
+- stop
+- quit
+- see ya
+- close session
+- close
 
 ## intent:affirm
 - yes
@@ -175,6 +184,11 @@
 - Give me my account details
 - show account at [sbi](bank_name)
 - lizerunt for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- account details
+- list my acconts
+- give me a list of all my accounts
+- list all accounts
+- may i know my account tales
 
 ## intent:get_atms_for_bank
 - show cash machine for [city bank](bank_name)
@@ -214,6 +228,8 @@
 - is there any nearby cash machine
 - show cash machine for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
 - so cash machine for [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
+- additional cash machines
+- list nearby cash machines
 
 ## intent:get_account_info_bank
 - show balance for [1911mc10](account_number) at [city bank](bank_name)
@@ -244,6 +260,10 @@
 - I would like to know my account balance
 - show balance for [1911mc10](account_number) at [city bank]{"entity": "bank_name", "value": "Bank-of-Pune"}
 - so balance for account
+- i would like to know my savings account balance
+- i would like to know my checking account balance
+- checking balance
+- savings balance
 
 ## intent:get_capability
 - what can you do?
@@ -265,6 +285,7 @@
 - city bank
 - citi bank
 - Citi bank
+- citybank
 
 ## lookup:bank_name
   data/lookup_tables/banks.txt

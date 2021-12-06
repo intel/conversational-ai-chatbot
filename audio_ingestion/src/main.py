@@ -58,6 +58,8 @@ def main():
             log.info("Publishing File ")
             for wfile in config.get_wave_files():
                 publish_pcm(Outport, wfile)
+                audio_file = wfile.rsplit('/', 1)[1]
+                log.info('publishing {}'.format(audio_file))
                 time.sleep(30)
 
 

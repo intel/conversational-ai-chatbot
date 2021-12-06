@@ -14,33 +14,49 @@ services:
   wave_ingestion:
     image: "audio-ingester:${TAG}"
     environment:
+      # Set input/output addresses 
       - OUTPUT_ADDR=ipc:///feeds/0
+      # path where audio files are mapped 
       - WAVE_PATH=/audios
-      #- WAVE_FILES=audio0.wav,audio1.wav,audio2.wav,audio3.wav
+      - WAVE_FILES=audio0.wav,audio1.wav,audio2.wav,audio3.wav
       - OUTPUT_TOPIC=audio
       - INPUT_ADDR=ipc:///feeds/11
       - INPUT_TOPIC=userloggedin
       - AUTHZ_SERVER_ADDR=ipc:///feeds/9
       - LOG_LEVEL=info
     volumes:
-      #- ./audios:/audios
+      - ./audios:/audios
       - zmq_ipc_vol:/feeds
     command: ["python3", "/app/src/main.py"]
     depends_on:
      - tts
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
   tts:
     image: "tts:${TAG}"
     devices:
       - /dev/snd:/dev/snd
     environment:
+      # Set input/output addresses 
       - INPUT_ADDR=ipc:///feeds/2
       - INPUT_TOPIC=nlp
       - OUTPUT_ADDR=ipc:///feeds/3
       - OUTPUT_TOPIC=tts
       - AUTHZ_SERVER_ADDR=ipc:///feeds/9
       - LOG_LEVEL=info
+      # Enable PLAY_AUDIO for playback of TTS audio
       - PLAY_AUDIO=1
+      # Set the ALSA_CARD with the name of OUTPUT device 
+      - ALSA_CARD=<add sound card name here>
     command: ["./run.sh"]
     volumes:
       - zmq_ipc_vol:/feeds
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
 
