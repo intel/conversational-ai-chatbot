@@ -22,7 +22,8 @@ def pusher(manager, port):
     data = ""
     while not Final:
         data, Final = manager.get_result()
-        log.info("in thread: data [ {} ] final [ {} ]".format(data.decode(), Final))
+        log.info("Inferred Output: ' {} ' Final: ' {} '".format(data.decode(), Final))
+    log.debug("Publishing text output to 0MQ")
     port.push(bytes(pretty(data), encoding="utf-8"), "FINAL")
 
 
@@ -33,32 +34,39 @@ def pretty(text):
 
 def main():
     freeze_support()
-    log.info("Kaldi ASR")
+    log.info("Starting Kaldi ASR Service")
 
     # Set Input and Output Ports
     ipp = config.get_inputport()
-    log.info("Main: Input port set")
+    log.info("Created 0MQ Input Data Receiver")
 
     Outport = config.get_outputport()
-    log.info("Main: Output port set")
+    log.info("Created 0MQ Output Data Publisher")
 
     manager = SpeechManager()
+    log.debug("Speech Manager Initializing")
     config_file = "/app/src/model/speech_lib.cfg"
     manager.initialize(config_file)
-    log.info("Main: Speech Manager Initialized")
+    log.debug("Speech Manager Initialized")
     try:
+        log.debug("Waiting to Receive Input Data")
+        # Blocking Call
         for data, event in ipp.data_and_event_generator():
+            log.debug(
+                "Data with Length: {} is received along with event: {}".format(len(data), event)
+            )
             if event == "pcm":
+                log.debug("Process data received with event: {}".format(event))
                 process_pcm_data(data, manager, Outport)
-                continue
+
     except Exception as msg:
-        log.info("Received Exception %s", msg)
+        log.error("Received Exception %s", msg)
 
 
 # This function expects the data as, bytes read from a wave file.
 # bitrate,16000:mono channel and pcmle encoded
 def process_pcm_data(data, manager, Outport):
-
+    log.debug("Processing data")
     wave_data = data
     out = io.BytesIO()
     data_ = np.frombuffer(data, dtype=np.int16)
@@ -68,10 +76,12 @@ def process_pcm_data(data, manager, Outport):
         with wave.open(file, "rb") as f:
             frames_per_buffer = 160
             frames = f.readframes(frames_per_buffer)
+            log.debug("Generating Frames")
             while frames:
                 yield frames
                 frames = f.readframes(frames_per_buffer)
 
+    log.debug("Push Data to Speech Manager")
     for d in buffer_generator(out):
         try:
             manager.push_data(d, finish_processing=False)

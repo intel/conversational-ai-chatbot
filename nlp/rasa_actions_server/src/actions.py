@@ -39,7 +39,7 @@ def logout(token):
 
 
 level = logging.ERROR
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=level)
+logging.basicConfig(format="%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)-20s ] - %(message)s", level=level)
 logging.root.setLevel(level)
 logger = logging.getLogger()
 logger.setLevel(level)
@@ -74,9 +74,9 @@ def get_cert():
 
 def backend_helper():
     try:
-        log.info("proxy ".format(os.environ["http_proxy"]))
+        log.debug("proxy ".format(os.environ["http_proxy"]))
     except (KeyError, IndexError):
-        log.info("proxy not found")
+        log.error("proxy not found")
     connection_helper = base.Connector(cert=get_cert())
     connection_helper.BASE_URL = "https://apisandbox.openbankproject.com"
     connection_helper.TOKEN = get_jwt()
@@ -94,7 +94,7 @@ class ActionGetBanks(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
         print(self.name())
-        log.info("Action Called {}".format(self.name()))
+        log.debug("Action {} Started".format(self.name()))
         conn = backend_helper()
         bank_ = banks.Bank(conn)
         list_of_banks = bank_.get_banks()
@@ -112,6 +112,7 @@ class ActionGetBanks(Action):
             texti = "Could not get bank list"
         dispatcher.utter_message(text=texti)
 
+        log.debug("Action {} Completed".format(self.name()))
         return []
 
 
@@ -128,9 +129,11 @@ class ActionDefaultFallback(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
+        log.debug("Action {} Started".format(self.name()))
         dispatcher.utter_message(template="utter_default")
 
         # Revert user message which led to fallback.
+        log.debug("Action {} Completed".format(self.name()))
         return []
 
 
@@ -144,13 +147,14 @@ class ActionListBanks(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        log.info("Action Called {}".format(self.name()))
-
+        log.debug("Action {} Started".format(self.name()))
+        
         supported_bank = "Bank-of-Pune"
         # print ("Default bank_name ", tracker.get_slot('bank_name'))
         dispatcher.utter_message(
             template="utter_supported_banks", bank_name=proper_bank_name(supported_bank)
         )
+        log.debug("Action {} Completed".format(self.name()))
         return []
 
 
@@ -164,7 +168,7 @@ class ActionListAtms(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        log.info("Action Called {}".format(self.name()))
+        log.debug("Action {} Started".format(self.name()))
         # Get bank from tracker
         bank_name = tracker.get_slot("bank_name")
         supported_banks = ["Bank-of-Pune"]
@@ -173,6 +177,7 @@ class ActionListAtms(Action):
                 template="utter_supported_banks",
                 bank_name=",".join(list(map(proper_bank_name, supported_banks))),
             )
+            log.debug("Action {} Completed".format(self.name()))
             return []
         conn = backend_helper()
         atm_ = atm.ATM(conn)
@@ -190,11 +195,10 @@ class ActionListAtms(Action):
             atm_response = "No atms found for {}".format(proper_bank_name(bank_name))
 
         dispatcher.utter_message(text=atm_response)
-
+        log.debug("Action {} Completed".format(self.name()))
         return []
 
 def _get_account_details(atm_, bank_name, dispatcher):
-
     list_of_accounts = atm_.get_accounts_held(bank_name)
     if list_of_accounts is None:
         texti = "No account found for bank: {}".format(proper_bank_name(bank_name))
@@ -233,16 +237,16 @@ class ActionListAccountsAtBank(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
         # Get bank from tracker
-        log.info("Action Called {}".format(self.name()))
+        log.debug("Action {} Started".format(self.name()))
 
         conn = backend_helper()
         atm_ = accounts.Account(conn)
 
         try:
             bank_name = tracker.get_slot("bank_name")
-            log.info("Bank name from tracker {}".format(bank_name))
+            log.debug("Bank name from tracker {}".format(bank_name))
         except Exception:
-            log.info("Bank name not in tracker")
+            log.debug("Bank name not in tracker")
 
         # Check unsupported banks here
         supported_banks = ["Bank-of-Pune"]
@@ -251,6 +255,7 @@ class ActionListAccountsAtBank(Action):
                 template="utter_supported_banks",
                 bank_name=",".join(list(map(proper_bank_name, supported_banks))),
             )
+            log.debug("Action {} Completed".format(self.name()))
             return []
 
         value, account_number = _get_account_details(atm_, bank_name, dispatcher)
@@ -258,6 +263,7 @@ class ActionListAccountsAtBank(Action):
         textp = "You have {} savings accounts with our bank".format(total_accounts)
         dispatcher.utter_message(text=textp)
 
+        log.debug("Action {} Completed".format(self.name()))
         return [SlotSet(key="account_number", value=value)]
 
 
@@ -271,7 +277,7 @@ class ActionListAccountBalance(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        log.info("Action Called {}".format(self.name()))
+        log.debug("Action {} Started".format(self.name()))
 
         # Get slot information from tracker
         # if slots are not filled, fallback to default reply or other replies
@@ -306,6 +312,7 @@ class ActionListAccountBalance(Action):
                 print("Got an exception ", msg)
                 texti = "Sorry Couldn't get balance"
             list_of_accounts = atm_.get_account_by_id(bank_name, account_id)
+            
             if list_of_accounts is not None:
                 return (str(list_of_accounts["number"])[-4:], texti)
             return (None, None)
@@ -318,7 +325,8 @@ class ActionListAccountBalance(Action):
                 num, amt
             )
             dispatcher.utter_message(text=texti)
-
+        
+        log.debug("Action {} Completed".format(self.name()))
         return [SlotSet(key="account_number", value=value)]
         
 
@@ -333,12 +341,13 @@ class ActionLogout(Action):
         tracker: Tracker,
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
-        log.info("Action Called {}".format(self.name()))
+        log.debug("Action {} Started".format(self.name()))
         logout_async = Thread(target=logout, args=(get_jwt()), daemon=True)
         logout_async.start()
         # Clear slots from tracker
         dispatcher.utter_message(template="utter_goodbye")
 
+        log.debug("Action {} Completed".format(self.name()))
         return [
             SlotSet(key="account_number", value=None),
             SlotSet(key="bank_name", value=None),

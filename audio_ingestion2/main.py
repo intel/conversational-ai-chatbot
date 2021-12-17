@@ -31,6 +31,7 @@ login_watcher = config.get_login_watcher()
 
 def publish_pcm(Outport, file):
     session_valid = login_watcher.session_valid
+    log.debug("Subscribing, to get a valid Session")
     if session_valid:
         import wave
 
@@ -38,50 +39,55 @@ def publish_pcm(Outport, file):
             data = f.readframes(-1)
             login = login_watcher.session_id
             h = Outport.update_session_id(login)
-            log.info("pushed to ASR")
+            log.debug("Publishing the Data")
             return Outport.push(data, "pcm")
+    log.debug("Session Invalid")
 
 
 def task(quit_event, op):
     try:
         mic = Microphone(quit_event=quit_event)
+        log.debug("Microphone Initialized ")
         time = 0
         is_wakeup = False
         condition = False
         while not quit_event.is_set():
             if mic.wakeup(config.WAKE_UP_WORD):
-                # TODO: choose wake word here
-                # if 1:
-                log.info("Wake up")
+                log.debug("Wake up word detected, Started Listening")
                 data = mic.listen()
                 recorded_wav = io.BytesIO()
+                log.debug("Recorded Audio")
 
                 with wave.open(recorded_wav, "wb") as wav:
                     wav.setsampwidth(config.sample_width)
                     wav.setnchannels(config.audio_channels)
                     wav.setframerate(config.bitrate)
+                    # log.debug("Configuring the Wave file with Required Dataset")
                     # wav.writeframes(frames)
                     for d in data:
                         if d:
                             wav.writeframes(d)
 
+                log.debug("Trying to Publish")
                 publish_pcm(op, recorded_wav.getvalue())
-                log.debug("sent")
+                log.debug("Published Audio")
     except Exception as msg:
         log.error("Received Exception %s", msg)
 
 
 def main():
+    log.info("Audio Ingestion Service Started")
     # op = OutputPort(addr=config.OUTPUT_ADDR, topic=config.OUTPUT_TOPIC)
     Outport = config.get_output_port()
     quit_event = Event()
     thread = Thread(target=task, args=(quit_event, Outport))
     thread.start()
+    log.debug("Recorder Started...")
     while True:
         try:
             time.sleep(1)
         except KeyboardInterrupt:
-            log.info("Quit")
+            log.debug("Quit")
             quit_event.set()
             break
     thread.join()

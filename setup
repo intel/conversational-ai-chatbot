@@ -5,7 +5,6 @@
 
 import os
 import sys
-import socket
 import shlex
 import time
 import logging
@@ -14,30 +13,51 @@ from subprocess import run, PIPE
 MODULE = "."
 CURRENT_DIR = os.getcwd()
 SOCKET_DIR = "ipcSocket"
+TMP_FILE = "/tmp/script.log"
+AUDIO_FILE = "record.wav"
 
-DOCKER_IMAGES = ["deepspeech_asr:1.0", "kaldi_asr:1.0",
-                 "huggingface_asr:1.0", "quartznet_asr:1.0",
-                 "audio-ingester:1.0", "audio-ingester2:1.0",
-                 "tts:1.0", "authz:1.0", "rasa:1.10.1",
-                 "nlp_app:1.0", "action_server:1.0"]
+DOCKER_IMAGES = [
+    "deepspeech_asr:1.0",
+    "kaldi_asr:1.0",
+    "huggingface_asr:1.0",
+    "quartznet_asr:1.0",
+    "audio-ingester:1.0",
+    "audio-ingester2:1.0",
+    "tts:1.0",
+    "authz:1.0",
+    "rasa:1.10.1",
+    "nlp_app:1.0",
+    "action_server:1.0",
+]
 
-DOCKER_SECRETS = ["jwtalgo", "jwtsecret",
-                  "action_tls_cert", "action_tls_key",
-                  "api_tls_cert", "api_tls_key",
-                  "authz_tls_cert", "authz_tls_key",
-                  "rasaw_tls_cert", "rasaw_tls_key",
-                  "nlp_tls_cert", "nlp_tls_key", "nlp_tls_cacert"]
+DOCKER_SECRETS = [
+    "jwtalgo",
+    "jwtsecret",
+    "action_tls_cert",
+    "action_tls_key",
+    "api_tls_cert",
+    "api_tls_key",
+    "authz_tls_cert",
+    "authz_tls_key",
+    "rasaw_tls_cert",
+    "rasaw_tls_key",
+    "nlp_tls_cert",
+    "nlp_tls_key",
+    "nlp_tls_cacert",
+]
 
-CONTAINERS_WAVE_INGESTION = ["chatfrontend_wave_ingestion_1",
-                             "chatfrontend_tts_1"]
+CONTAINERS_WAVE_INGESTION = [
+    "chatfrontend_wave_ingestion_1", "chatfrontend_tts_1"]
 
-CONTAINERS_LIVE_INGESTION = ["chatfrontend_audio_ingestion_1",
-                             "chatfrontend_tts_1"]
+CONTAINERS_LIVE_INGESTION = [
+    "chatfrontend_audio_ingestion_1", "chatfrontend_tts_1"]
 
-SERVICES = ["chatbackend_asr_speech",
-            "chatbackend_authz",
-            "chatbackend_rasa_action",
-            "chatbackend_nlp_app"]
+SERVICES = [
+    "chatbackend_asr_speech",
+    "chatbackend_authz",
+    "chatbackend_rasa_action",
+    "chatbackend_nlp_app",
+]
 
 
 class CustomFormatter(logging.Formatter):
@@ -55,7 +75,7 @@ class CustomFormatter(logging.Formatter):
         logging.INFO: grey + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
-        logging.CRITICAL: pink + format + reset
+        logging.CRITICAL: pink + format + reset,
     }
 
     def format(self, record):
@@ -64,9 +84,9 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-class ConversationalAI(object):
+class SetAudioDevice(object):
     """
-    Main class for the module InteractiveKioskAIChatbot
+    Parent/Helper class for the module Conversational-AI
     """
 
     def __init__(self, module_path, output_path):
@@ -77,7 +97,6 @@ class ConversationalAI(object):
         if not os.path.isdir(self.output_path):
             os.mkdir(self.output_path)
         self.log = self.set_logger(log_file)
-        self.ip_address = self.get_ip_address()
         self.str_len = 50
         self.cwd = os.getcwd()
         self.socketDir = "{}/{}/{}".format(self.cwd, MODULE, SOCKET_DIR)
@@ -86,7 +105,6 @@ class ConversationalAI(object):
         self.obp_username = os.environ["OBP_USERNAME"]
         self.obp_pass = os.environ["OBP_PASS"]
         self.obp_apikey = os.environ["OBP_APIKEY"]
-        self.alsa_card = os.environ["ALSA_CARD"]
         self.http_proxy = os.environ["http_proxy"]
         self.https_proxy = os.environ["https_proxy"]
 
@@ -106,22 +124,16 @@ class ConversationalAI(object):
 
         return Logger
 
-    def get_ip_address(self):
-        """
-        Get the IP address of the Build node
-        :return: None
-        """
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            sock.connect(("8.8.8.8", 80))
-            ip_address = sock.getsockname()[0]
-            sock.close()
-            return ip_address
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
-
-    def run_command(self, command, message="", input=None, stdout=PIPE,
-                    stderr=PIPE, mandatory=True, get_output=False):
+    def run_command(
+        self,
+        command,
+        message="",
+        input=None,
+        stdout=PIPE,
+        stderr=PIPE,
+        mandatory=True,
+        get_output=False,
+    ):
         """
         Run bash command
         """
@@ -136,11 +148,214 @@ class ConversationalAI(object):
                 if stderr == PIPE and stdout == PIPE:
                     error = status.stdout + status.stderr
                 if mandatory:
-                    self.log.error(error.decode('utf-8'))
+                    self.log.error(error.decode("utf-8"))
                 return False
             return True
         except Exception as msg:
             self.log.error("[ERROR]: Received Exception %s", msg)
+
+    def create_alsa_image(self):
+        cmds = [
+            'sudo docker run -it -u 0 --name alsa_expt ubuntu:18.04 sh -c "apt-get update > /dev/null && apt-get install -y alsa-utils"',
+            "sudo docker commit alsa_expt alsa_expt",
+        ]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd)
+
+    def remove_alsa_image(self):
+        cmds = ["sudo docker rm -f alsa_expt", "sudo docker rmi -f alsa_expt"]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd, mandatory=False)
+
+    def del_file(self, file):
+        cmds = ["sudo rm -rf {}".format(file)]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd, mandatory=False)
+
+    def clean_up(self):
+        self.del_file(AUDIO_FILE)
+        self.remove_alsa_image()
+        # Clean the temporary file used in the functions
+        self.del_file(TMP_FILE)
+        self.del_file("soundcards.tmp")
+        self.del_file("sound.tmp")
+
+    def get_recorders_name(self, recorders):
+        return list(map(lambda x: x[0], recorders))
+
+    def get_recorder_number(self, recorders, name):
+        for r in recorders:
+            if name in r:
+                return r[1]
+        return None
+
+    def playback_devices(self):
+        cmds = [
+            'sudo docker run -it --privileged --rm -u 0 -v {0}:/data --device=/dev/snd alsa_expt sh -c "aplay -l > /data/soundcards.tmp 2>&1; chmod 777 /data/soundcards.tmp"'.format(
+                CURRENT_DIR
+            )
+        ]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd)
+        f = open("soundcards.tmp", "r")
+        data = f.readlines()
+        f.close()
+        rds = []
+        for line in data:
+            if "card" in line:
+                rds.append(line.split(":")[1].split("[")[0])
+        return list(map(lambda x: "".join(x.split()), set(rds)))
+
+    def recording_devices(self):
+        cmds = [
+            'sudo docker run -it --privileged --rm -u 0 -v {0}:/data --device=/dev/snd alsa_expt sh -c "arecord -l > /data/soundcards.tmp 2>&1; chmod 777 /data/soundcards.tmp"'.format(
+                CURRENT_DIR
+            )
+        ]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd)
+        f = open("soundcards.tmp", "r")
+        data = f.readlines()
+        f.close()
+        rds = []
+        for line in data:
+            if "card" in line:
+                # self.log.info(line)
+                rds.append(
+                    (
+                        line.split(":")[1].split("[")[0],
+                        line.split(":")[0].replace("card", ""),
+                    )
+                )
+
+        return list(
+            map(lambda x: ("".join(x[0].split()),
+                "".join(x[1].split())), set(rds))
+        )
+
+    def test_audio_usecase(self, recording_device, playback_device):
+        duration = 20
+        cmds = [
+            'sudo docker run -it --rm --privileged -u 0 -v {2}:/data --device=/dev/snd alsa_expt sh -c "export ALSA_PCM_CARD={0}; arecord -c 1 -r 16000 -d {3} -f S16_LE /data/{4}; chmod 777 /data/{4}; sleep 2; export ALSA_PCM_CARD='
+            '; export ALSA_CARD={1}; aplay /data/{4} > /data/sound.tmp 2>&1; chmod 777 /data/sound.tmp"'.format(
+                recording_device, playback_device, CURRENT_DIR, duration, AUDIO_FILE
+            )
+        ]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd)
+        self.del_file(AUDIO_FILE)
+
+    def no_soundcards(self):
+        cmds = [
+            'sudo docker run -it --privileged --rm -u 0 -v {0}:/data --device=/dev/snd alsa_expt sh -c "arecord -l > /data/soundcards.tmp 2>&1; chmod 777 /data/soundcards.tmp"'.format(
+                CURRENT_DIR
+            )
+        ]
+        for cmd in cmds:
+            with open(TMP_FILE, "w") as outp:
+                self.run_command(cmd)
+        f = open("soundcards.tmp", "r")
+        data = f.readlines()
+        f.close()
+        rds = []
+        for line in data:
+            if "no soundcards found" in line:
+                self.log.info(line)
+                return True
+        return False
+
+    def user_prompt(self):
+        recorders = self.recording_devices()
+        players = self.playback_devices()
+        rec, play = (None, None)
+        rec_name = None
+
+        print("Choose a recording device and a playback device to test")
+
+        while True:
+            # self.log.info("Please choose a recording device and a playback device to test")
+            # cont = input(
+            #     'Enter "Yes" to choose a recording device and a playback device to test, else press any other key to use default PCH audio device for recording and playback: '
+            # )
+            # if not cont.lower() == "yes":
+            #     rec_name = "0"
+            #     play = "PCH"
+
+            #     break
+            if not rec_name:
+
+                print(
+                    "Available recording devices: {}".format(
+                        self.get_recorders_name(recorders)
+                    )
+                )
+
+                rec_name = input("Choose Recording Device (case sensitive): ")
+                if rec_name not in list(map(lambda x: x[0], recorders)):
+                    self.log.warn("Choose the correct recording device")
+                    rec_name = None
+                    continue
+                rec = self.get_recorder_number(recorders, rec_name)
+
+            print("Available playback devices: {}".format(players))
+            play = input("Choose Playback Device (case sensitive): ")
+            if play not in players:
+                self.log.warn("Choose the correct playback device")
+                continue
+            print(
+                f"You chose {rec_name} for recording and {play} for playback")
+            print(
+                "Please speak for 20s. Your voice will be recorded for 20s and played back"
+            )
+            self.test_audio_usecase(rec, play)
+            output = input("Do you hear the audio? Yes/No: ")
+
+            if output.lower() == "yes":
+                break
+            else:
+                self.log.error(
+                    "Plug in another audio device and start the installation again."
+                )
+                self.clean_up()
+                sys.exit()
+
+        print("recording device: {}".format(rec_name))
+        print("playback device: {}".format(play))
+
+        return (rec, play)
+
+    def set_device(self):
+        """
+        set audio recording and playback devices
+        """
+        try:
+            self.log.info("Setting up audio device for recording and playback")
+            self.create_alsa_image()
+            rec, playback = self.user_prompt()
+            self.clean_up()
+            if rec and playback:
+                self.alsa_card = playback
+                self.alsa_pcm_card = rec
+                self.log.debug(
+                    "[SUCCESS]: Setting up audio device for recording and playback"
+                )
+        except Exception as msg:
+            self.log.error("[ERROR]: Received Exception %s", msg)
+
+
+class ConversationalAI(SetAudioDevice):
+    """
+    Main class for the module Conversational-AI
+    """
+
+    def __init__(self, module_path, output_path):
+        super(ConversationalAI, self).__init__(module_path, output_path)
 
     def create_directory(self, directory):
         """
@@ -190,8 +405,10 @@ class ConversationalAI(object):
             self.run_command("sudo docker rmi -f hello-world")
             message = "Docker CE installed, but failed to run docker hello-world"
             self.run_command("sudo docker run --rm hello-world", message)
-            self.run_command("sudo docker-compose --version",
-                             message="docker-compose is not Installed")
+            self.run_command(
+                "sudo docker-compose --version",
+                message="docker-compose is not Installed",
+            )
         except Exception as msg:
             self.log.error("[ERROR]: Received Exception %s", msg)
 
@@ -203,14 +420,14 @@ class ConversationalAI(object):
         try:
             self.log.info("Initializing docker swarm")
             time.sleep(1)
-            command = f"sudo docker swarm init --advertise-addr {self.ip_address}"
+            command = f"sudo docker swarm init"
             status = self.run_command(command, get_output=True)
             if status.returncode:
                 error = status.stderr.decode("utf-8")
                 if "This node is already part of a swarm" in error:
                     cmd = f"sudo docker node ls -q"
                     retval = self.run_command(cmd, get_output=True)
-                    output = retval.stdout.decode('utf-8').split("\n")
+                    output = retval.stdout.decode("utf-8").split("\n")
                     if len(output) == 2:
                         return True
         except Exception as msg:
@@ -223,65 +440,77 @@ class ConversationalAI(object):
         try:
             # cwd = os.getcwd()
             self.log.info(
-                "Building Docker Images. It will take approximately 60 mins for 1st time build.")
+                "Building Docker Images. It will take approximately 60 mins for 1st time build."
+            )
 
             self.log.info("Building deepspeech docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/deepspeech8_asr.dockerfile -t deepspeech_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(
                 command, "Failed to build deepspeech docker imgae")
 
             self.log.info("Building kaldi docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/kaldi_asr.dockerfile -t kaldi_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(command, "Failed to build kaldi docker imgae")
 
             self.log.info("Building quartznet docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/quartznet_asr.dockerfile -t quartznet_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(command, "Failed to build quartznet docker imgae")
 
             self.log.info("Building huggingface docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/huggingface_asr.dockerfile -t huggingface_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(
                 command, "Failed to build huggingface docker imgae")
 
             self.log.info("Building audio-ingester docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/audio_ingestion.dockerfile  -t audio-ingester:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(
                 command, "Failed to build audio-ingester docker imgae")
 
             self.log.info("Building audio-ingester2 docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/audio_ingestion2.dockerfile  -t audio-ingester2:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(
                 command, "Failed to build audio-ingester2 docker imgae")
 
             self.log.info("Building tts docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/tts.dockerfile  -t tts:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(command, "Failed to build tts docker imgae")
 
             self.log.info("Building authz docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/authz.dockerfile -t authz:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(command, "Failed to build authz docker imgae")
 
             self.log.info("Building nlp_app docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/nlp.dockerfile -t nlp_app:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(command, "Failed to build nlp_app docker imgae")
 
             self.log.info("Building rasa docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/rasa.dockerfile -t rasa:1.10.1 .".format(
-                self.http_proxy, self.https_proxy)
+                self.http_proxy, self.https_proxy
+            )
             self.run_command(command, "Failed to build rasa docker imgae")
 
             self.log.info("Building action_server docker image.")
             command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/rasa_action_server.dockerfile -t action_server:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag)
+                self.http_proxy, self.https_proxy, self.tag
+            )
             self.run_command(
                 command, "Failed to build action_server docker imgae")
         except Exception as msg:
@@ -306,7 +535,8 @@ class ConversationalAI(object):
         try:
             self.log.info("Creating Docker Volume")
             command = "sudo docker volume create --driver local --opt o=bind,uid=800,gid=1102 --opt type=none --opt device={} zmq_ipc_vol".format(
-                self.socketDir)
+                self.socketDir
+            )
             self.run_command(command, "Failed to create docker volume")
         except Exception as msg:
             self.log.error("[ERROR]: Received Exception %s", msg)
@@ -320,13 +550,16 @@ class ConversationalAI(object):
             command = "sudo sed -i 's/- D_TOKEN/#- D_TOKEN/g' compose/docker-compose-backend.yml"
             self.run_command(command, "Failed to comment out D_TOKEN variable")
             command = "sudo sed -i 's/<add username here>/{}/g' compose/docker-compose-backend.yml".format(
-                self.obp_username)
+                self.obp_username
+            )
             self.run_command(command, "Failed to update D_USERNAME variable")
             command = "sudo sed -i 's/<add obp pass here>/{}/g' compose/docker-compose-backend.yml".format(
-                self.obp_pass)
+                self.obp_pass
+            )
             self.run_command(command, "Failed to update D_PASS variable")
             command = "sudo sed -i 's/<add obp key here>/{}/g' compose/docker-compose-backend.yml".format(
-                self.obp_apikey)
+                self.obp_apikey
+            )
             self.run_command(command, "Failed to update D_APIKEY variable")
         except Exception as msg:
             self.log.error("[ERROR]: Received Exception %s", msg)
@@ -335,11 +568,18 @@ class ConversationalAI(object):
         try:
             self.log.info("Updating audio device name in compose")
             command = "sudo sed -i 's/- ALSA_CARD.*/- ALSA_CARD={}/g' compose/docker-compose-frontend.yml".format(
-                self.alsa_card)
+                self.alsa_card
+            )
             self.run_command(command, "Failed to update ALSA_CARD variable")
             command = "sudo sed -i 's/- ALSA_CARD.*/- ALSA_CARD={}/g' compose/docker-compose-frontend-respeaker.yml".format(
-                self.alsa_card)
+                self.alsa_card
+            )
             self.run_command(command, "Failed to update ALSA_CARD variable")
+            command = "sudo sed -i 's/- ALSA_PCM_CARD.*/- ALSA_PCM_CARD={}/g' compose/docker-compose-frontend-respeaker.yml".format(
+                self.alsa_pcm_card
+            )
+            self.run_command(
+                command, "Failed to update ALSA_PCM_CARD variable")
         except Exception as msg:
             self.log.error("[ERROR]: Received Exception %s", msg)
 
@@ -351,8 +591,7 @@ class ConversationalAI(object):
             self.log.info("Starting Chatbot Services")
             # cwd = os.getcwd()
             command = "sudo -E docker stack deploy -c compose/docker-compose-backend.yml chatbackend"
-            self.run_command(
-                command, "Failed to deploy chabot backend stack")
+            self.run_command(command, "Failed to deploy chabot backend stack")
             if ingestion_type == "speech_ingestion":
                 command = "sudo -E docker-compose -p chatfrontend -f compose/docker-compose-frontend-respeaker.yml up -d"
             else:
@@ -393,7 +632,10 @@ class ConversationalAI(object):
             for secret in DOCKER_SECRETS:
                 command = "sudo docker secret rm {}".format(secret)
                 self.run_command(
-                    command, "Failed to remove docker secret {}".format(secret), mandatory=False)
+                    command,
+                    "Failed to remove docker secret {}".format(secret),
+                    mandatory=False,
+                )
         except Exception as msg:
             self.log.error("[ERROR]: Received Exception %s", msg)
 
@@ -410,7 +652,7 @@ class ConversationalAI(object):
                 if status.returncode:
                     self.log.error(
                         "[ERROR]: Failed to verify {} image".format(image))
-                output = status.stdout.decode('utf-8').split("\n")
+                output = status.stdout.decode("utf-8").split("\n")
                 output = [i for i in output if i]
                 exists = False
                 if len(output) >= 2:
@@ -424,7 +666,9 @@ class ConversationalAI(object):
                     images_not_found.append(image)
             if images_not_found:
                 self.log.error(
-                    "[ERROR]: Following docker images are not built %s", images_not_found)
+                    "[ERROR]: Following docker images are not built %s",
+                    images_not_found,
+                )
             else:
                 self.log.debug(
                     "[SUCCESS]: All required docker images are built.")
@@ -437,20 +681,24 @@ class ConversationalAI(object):
         :return:
         """
         try:
-            #self.log.info("Verifying the required containers")
+            # self.log.info("Verifying the required containers")
             not_found = []
             if ingestion_type == "speech_ingestion":
                 CONTAINERS = CONTAINERS_LIVE_INGESTION
             else:
                 CONTAINERS = CONTAINERS_WAVE_INGESTION
             for container in CONTAINERS:
-                command = f"sudo docker ps --filter name={container} " \
+                command = (
+                    f"sudo docker ps --filter name={container} "
                     "--filter status=running"
+                )
                 status = self.run_command(command, get_output=True)
                 if status.returncode:
                     self.log.error(
-                        "[ERROR]: Failed to verify {} container".format(container))
-                output = status.stdout.decode('utf-8').split("\n")
+                        "[ERROR]: Failed to verify {} container".format(
+                            container)
+                    )
+                output = status.stdout.decode("utf-8").split("\n")
                 output = [i for i in output if i]
                 exists = False
                 if len(output) >= 2:
@@ -471,14 +719,14 @@ class ConversationalAI(object):
         :return:
         """
         try:
-            #self.log.info("Verifying the required services")
+            # self.log.info("Verifying the required services")
             not_found = []
             not_started = []
             command = "sudo docker service ls --format '{{.Name}} {{.Replicas}}'"
             status = self.run_command(command, get_output=True)
             if status.returncode:
                 self.log.error("[ERROR]: Failed to verify services")
-            output = status.stdout.decode('utf-8').split("\n")
+            output = status.stdout.decode("utf-8").split("\n")
             output = [i.split(" ") for i in output if i]
             for service in SERVICES:
                 found = False
@@ -509,17 +757,23 @@ class ConversationalAI(object):
             time.sleep(30)
             containers_not_found = self.verify_containers(ingestion_type)
             service_not_found, service_not_started = self.verify_services()
-            if not containers_not_found and not service_not_found and not service_not_started:
+            if (
+                not containers_not_found
+                and not service_not_found
+                and not service_not_started
+            ):
                 result = True
             time.sleep(5)
             if not result:
                 containers_not_found = " ".join(containers_not_found)
                 service_not_found = " ".join(service_not_found)
                 service_not_started = " ".join(service_not_started)
-                self.log.error("[ERROR]: Following components not found: \
-                                    {0} {1} {2}".format(containers_not_found,
-                                                        service_not_found,
-                                                        service_not_started))
+                self.log.error(
+                    "[ERROR]: Following components not found: \
+                                    {0} {1} {2}".format(
+                        containers_not_found, service_not_found, service_not_started
+                    )
+                )
             else:
                 self.log.debug(
                     "[SUCCESS]: Conversational AI Chat Bot is installed.")
@@ -542,6 +796,7 @@ class ConversationalAI(object):
         Method to call main_install and main_post_install with exception handling
         :return: status :type: bool
         """
+        self.set_device()
         self.init_swarm()
         self.create_directory(self.socketDir)
         self.change_directory_permission(self.socketDir)
@@ -569,7 +824,8 @@ class ConversationalAI(object):
         Help messge
         """
         self.log.info(
-            "Setup tool only supports\n\t1.build\n\t2.run wave_ingestion OR run speech_ingestion\n\t3.stop wave_ingestion or stop speech_ingestion\n\t4.help")
+            "Setup tool only supports\n\t1.build\n\t2.run wave_ingestion OR run speech_ingestion\n\t3.stop wave_ingestion or stop speech_ingestion\n\t4.help"
+        )
 
 
 if __name__ == "__main__":

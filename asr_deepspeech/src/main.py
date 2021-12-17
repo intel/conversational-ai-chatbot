@@ -19,7 +19,7 @@ def pusher(manager, port):
     data = ""
     while not Final:
         data, Final = manager.get_result()
-        log.info("in thread: data [ {} ] final [ {} ]".format(data, Final))
+        log.debug("Inferred Output: ' {} ' Final ' {} '".format(data, Final))
     port.push(bytes(pretty(data), encoding="utf-8"), "FINAL")
 
 
@@ -38,30 +38,35 @@ def audio_input(bytes):
 
 def main():
     freeze_support()
-    log.info("main: deepspeech ASR")
+    log.info("Starting Deepspeech ASR Service")
 
     # Set Input and Output Ports
     ipp = config.get_inputport()
-    Outport = config.get_outputport()
+    log.info("Created 0MQ Input Data Receiver")
 
-    log.info("main: Input/Output Ports set")
+    Outport = config.get_outputport()
+    log.info("Created Output Data Publisher")
+
     manager = SpeechManager()
+    log.debug("Speech Manager Initializing")
     config_file = "/model/deepspeech8.cfg"
     manager.initialize(config_file)
-    log.info("main: Speech Manager Initialized")
+    log.debug("Speech Manager Initialized")
 
     try:
+        log.debug("Waiting to Receive Input Data")
         for data, event in ipp.data_and_event_generator():
-            log.info("Data len: {} event : {}".format(len(data), event))
+            log.debug("Data with Length: {} is received along with event: {}".format(len(data), event))
             if event == "pcm":
+                log.debug("Process data received with event: {}".format(event))
                 process_pcm_data(data, manager, Outport)
                 continue
             if event == "wave_file":
                 process_wave(data, manager, Outport)
                 continue
-            log.error("streaming input support removed")
+            log.error("Streaming Input Support Removed")
     except Exception as msg:
-        log.info("main: Received Exception %s", mesg)
+        log.error("Received Exception %s", msg)
     manager.close()
 
 
@@ -74,9 +79,12 @@ def process_wave(data, manager, Outport):
 
 
 def process_pcm_data(data, manager, Outport):
+    log.debug("Processing Audio Data")
     wave_data = data
     manager.push_data(wave_data, finish_processing=True)
     r, r1 = manager.get_result()
+    log.debug("Inferred Output: ' {} ' Final ' {} '".format(r, r1))
+    log.debug("Publishing text output to 0MQ")
     Outport.push(bytes(r, encoding="utf-8"), "FINAL")
 
 
