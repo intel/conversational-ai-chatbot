@@ -41,7 +41,6 @@ def get_outputport():
     return op
 
 
-
 def display_help():
     print("The application needs the following environment variables.")
     print("INPUT_ADDR, INPUT_TOPIC, OUTPUT_ADDR, OUTPUT_TOPIC")
@@ -97,7 +96,9 @@ def get_logger():
         level = logging.INFO
 
     logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(message)s", level=level)
+        format="%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)-20s ] - %(message)s",
+        level=level,
+    )
     logging.root.setLevel(level)
     logger = logging.getLogger()
     logger.setLevel(level)
@@ -114,7 +115,7 @@ def get_logger():
 ) = _read_env_variables()
 
 
-model_loc="/Models/quartznet-15x5-en.xml"
-sample_rate=16000
+model_loc = "/Models/quartznet-15x5-en.xml"
+sample_rate = 16000
 nchannels = 1
-samplewidth=2
+samplewidth = 2

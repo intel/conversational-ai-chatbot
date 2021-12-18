@@ -56,7 +56,7 @@ class LoginSessionWatcher(object):
 
 def get_wave_files():
     file_list = WAVE_FILES.split(",")
-    full_path=lambda x: os.path.join(WAVE_PATH, x)
+    full_path = lambda x: os.path.join(WAVE_PATH, x)
     return tuple(map(full_path, file_list))
 
 
@@ -114,7 +114,7 @@ def _read_env_variables():
     AUTHZ_SERVER_ADDR = env("AUTHZ_SERVER_ADDR")
     LOG_LEVEL = env("LOG_LEVEL")
     WAVE_PATH = env("WAVE_PATH")
-    WAVE_FILES= env("WAVE_FILES")
+    WAVE_FILES = env("WAVE_FILES")
 
     # Validate env address variable
     _validate_env_addr_variable(INPUT_ADDR, OUTPUT_ADDR, AUTHZ_SERVER_ADDR)
@@ -130,7 +130,7 @@ def _read_env_variables():
         AUTHZ_SERVER_ADDR,
         LOG_LEVEL,
         WAVE_PATH,
-        WAVE_FILES
+        WAVE_FILES,
     )
 
 
@@ -147,7 +147,9 @@ def get_logger():
         level = logging.INFO
 
     logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(message)s", level=level)
+        format="%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)-20s ] - %(message)s",
+        level=level,
+    )
     logging.root.setLevel(level)
     logger = logging.getLogger()
     logger.setLevel(level)
@@ -162,5 +164,5 @@ def get_logger():
     AUTHZ_SERVER_ADDR,
     LOG_LEVEL,
     WAVE_PATH,
-    WAVE_FILES
+    WAVE_FILES,
 ) = _read_env_variables()

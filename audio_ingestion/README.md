@@ -1,6 +1,6 @@
 # audio ingestion service
 
-This component is helpful during development and debugging. It supports reading wave files and publish them over 0MQ using `zmq_integration_component` of converational-ai-chatbot. It can be used to run the chatbot pipline remotelt when microphone is not available.
+This component is helpful during development and debugging. It supports reading wave files and publish them over 0MQ using `zmq_integration_component` of converational-ai-chatbot. It can be used to run the chatbot pipline remotely when microphone is not available.
 
 ## Usage
 
@@ -19,7 +19,7 @@ The speech recognition models used in this software are trained for US accent en
 DISCLAIMER: Online TTS Services may not be free for commercial use. One should consult the policy document for more details. We don't endorse any of these services. They are mentioned only for easy reference. 
 
 
-Suppose we have pre-recorded file namely  audio0.wav, audio1.wav, audio2.wav. We can keep them in a folder and map the folder to the audio_ingestion container. Then we need top set the follwoing env variables.
+Suppose we have pre-recorded file namely  audio0.wav, audio1.wav, audio2.wav. We can keep them in a folder and map the folder to the audio_ingestion container. Then we need to set the following env variables.
 
 - `WAVE_PATH` : It has the path of the folder with pre-recoded audio files
 - `WAVE_FILES` : A comma separated list of wave file names. (don't give space after comma)

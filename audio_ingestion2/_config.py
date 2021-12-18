@@ -136,7 +136,9 @@ def get_logger():
         level = logging.INFO
 
     logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(message)s", level=level)
+        format="%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)-20s ] - %(message)s",
+        level=level,
+    )
     logging.root.setLevel(level)
     logger = logging.getLogger()
     logger.setLevel(level)

@@ -14,9 +14,9 @@
 	- [General Guidance](#general-guidance)
 		- [How to build service individually](#how-to-build-service-individually)
 	- [Quickstart](#quickstart)
-		- [*Update the environment variables.*](#update-the-environment-variables)
-		- [Run wave-ingestion](#run-wave-ingestion)
-		- [Run Live Speech Ingestion](#run-live-speech-ingestion)
+			- [*Update the environment variables.*](#update-the-environment-variables)
+			- [Run wave-ingestion](#run-wave-ingestion)
+			- [Run Live Speech Ingestion](#run-live-speech-ingestion)
 	- [Expanding the Reference Implementation](#expanding-the-reference-implementation)
 	- [Release Notes](#release-notes)
 
@@ -78,12 +78,14 @@ You must build the provided component services and create local docker images. T
 ```
 
 $ sudo chmod a+x setup
+# set env variables
+$ source <repo-root>/setenvvars.sh
 $ ./setup build
 ```
 
 NOTE: This command may take a while to run depending on your internet connection and machine specifications.
 
-For development or a quick demo, you can follow the [quickstart instructions here.](#quickstart). Find the [detailed tutorial here](docs/tutorial.docx).
+For development or a quick demo, you can follow the [quickstart instructions here.](#quickstart)
 
 ### Step 3: Start the reference implementation
 
