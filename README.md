@@ -66,7 +66,7 @@ To use the chatbot, we need the credentials of an **Open Bank Project** compatib
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/intel-innersource/applications.infrastructure.eoe.conversational-ai
+git clone https://github.com/intel/conversational-ai-chatbot
 
 ```
 
