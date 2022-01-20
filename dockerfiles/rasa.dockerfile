@@ -6,7 +6,7 @@ LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
 ARG PIP_INDEX_URL=https://pypi.org/simple
 ARG APT_MIRROR_URL
-RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://deb.debian.org#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 # Creating Rasa base image
 RUN mkdir -p /app
 COPY nlp/rasa_actions_server/requirements.txt /app/

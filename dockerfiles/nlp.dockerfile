@@ -6,7 +6,7 @@ LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
 ARG PIP_INDEX_URL=https://pypi.org/simple
 ARG APT_MIRROR_URL
-RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://deb.debian.org#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 WORKDIR /app
 # copy the content of the local src directory to the working directory
 COPY nlp/app/* /app/
