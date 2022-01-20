@@ -4,12 +4,16 @@
 FROM openvino/ubuntu18_data_dev:2021.3 as builder
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL=""
+
 USER root
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 
 RUN apt-get update \
     && apt-get install -y python3-pip wget zip python3-dev libasound2-dev
 
-# Download TTS open source models 
+# Download TTS open source models
 COPY tts/tts_openvino /tmp/tts_openvino
 RUN cd /tmp/tts_openvino && ./prepare_and_install.sh download
 
@@ -24,18 +28,24 @@ RUN cp intel/text-to-speech-en-0001/text-to-speech-en-0001-regression/FP32/* /mo
 # build wheel here and copy to next stage
 RUN cd /tmp && python3 -m pip wheel simpleaudio
 
-FROM openvino/ubuntu18_runtime:2021.3 
+FROM openvino/ubuntu18_runtime:2021.3
+
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL
+
 USER root
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
+
 COPY --from=builder /model /model
-COPY --from=builder /tmp/tts_openvino /tmp/tts_openvino 
-COPY --from=builder /tmp/*.whl /tmp/ 
+COPY --from=builder /tmp/tts_openvino /tmp/tts_openvino
+COPY --from=builder /tmp/*.whl /tmp/
 
 RUN apt-get update \
     && apt-get install -y python3-pip libasound2
 
 RUN cd /tmp/tts_openvino \
     && ./prepare_and_install.sh install \
-    && ./prepare_and_install.sh clean 
+    && ./prepare_and_install.sh clean
 
 WORKDIR /app
 COPY tts/src/* /app/
