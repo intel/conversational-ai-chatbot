@@ -5,7 +5,9 @@
 FROM python:3.6-slim-buster
 LABEL maintainer Vinay <vinay.g@intel.com>
 
-
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 # set the working directory in the container
 WORKDIR /code
 

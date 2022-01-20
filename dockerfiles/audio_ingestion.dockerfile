@@ -4,6 +4,9 @@
 FROM ubuntu:18.04
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 RUN mkdir -p /app
 COPY audio_ingestion/requirements.txt /app/
 
@@ -16,7 +19,7 @@ COPY audio_ingestion/src /app/src
 # Install integration lib
 COPY integration_library /tmp/integration_library
 RUN cd /tmp/integration_library/zmq_integration_lib \
-    && bash install.sh 
+    && bash install.sh
 
 COPY dockerfiles/create_user.sh /create_user.sh
 RUN chmod a+x /create_user.sh \

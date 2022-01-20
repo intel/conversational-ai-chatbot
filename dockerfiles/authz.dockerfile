@@ -4,6 +4,9 @@
 FROM python:3.6-slim-buster
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 WORKDIR /app
 COPY authz /app
 
@@ -12,9 +15,9 @@ RUN pip install -r /app/requirements.txt
 # Install integration lib
 COPY integration_library /tmp/integration_library
 RUN cd /tmp/integration_library/zmq_integration_lib \
-    && bash install.sh 
+    && bash install.sh
 
-# Thin OBP client 
+# Thin OBP client
 COPY nlp/obp_api /data/obp_api
 RUN cd /data/obp_api \
     && pip install .

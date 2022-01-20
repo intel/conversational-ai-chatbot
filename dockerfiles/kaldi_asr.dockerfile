@@ -4,7 +4,12 @@
 FROM openvino/ubuntu18_data_dev:2021.3 AS builder
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL
+
 USER root
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
+
 RUN mkdir -p /app/lib
 
 RUN apt-get update && apt-get install -y python3 python3-pip python3-venv wget unzip\
@@ -28,8 +33,13 @@ COPY asr_kaldi/scripts/asr.sh /app
 
 
 FROM openvino/ubuntu18_runtime:2021.3
-# Copy from first stage  
+
+ARG PIP_INDEX_URL=https://pypi.org/simple
+ARG APT_MIRROR_URL
+
+# Copy from first stage
 USER root
+RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://.*archive.ubuntu.com#${APT_MIRROR_URL}#g" /etc/apt/sources.list || echo "APT_MIRROR_URL is not set"
 COPY --from=builder /app /app
 COPY --from=builder /model /model
 COPY --from=builder /opt/intel/openvino/data_processing/audio/speech_recognition/demos/live_speech_recognition_demo /speech_library
@@ -39,13 +49,13 @@ RUN apt-get update && apt-get install -y python3 python3-pip \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
-# Installing dependencies 
+# Installing dependencies
 COPY asr_kaldi/requirements.txt /tmp/requirements.txt
 RUN cd /tmp  && python3 -mpip install -r requirements.txt
 # Install integration lib
 COPY integration_library /tmp/integration_library
 RUN cd /tmp/integration_library/zmq_integration_lib \
-    && bash install.sh 
+    && bash install.sh
 
 COPY dockerfiles/create_user.sh /create_user.sh
 RUN chmod a+x /create_user.sh \
@@ -55,4 +65,3 @@ RUN chmod a+x /create_user.sh \
 USER sys-admin
 
 CMD ["/app/run.sh"]
-
