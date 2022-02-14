@@ -11,7 +11,7 @@ python3 -mpip install protobuf>=3.15.6
 python3 -mpip install mxnet~=1.2.0
 
 #python3 -mpip install mxnet~=1.7.0.post2
-python3 -mpip install wheel numpy numpy tqdm numba==0.48.0 librosa pyyaml networkx~=2.5 
+python3 -mpip install wheel numpy numpy tqdm numba==0.48.0 librosa==0.8.1 pyyaml networkx~=2.5 
 
 #python3 -mpip install "numpy>=1.16.6,<1.20"
 python3 -mpip install defusedxml>=0.7.1 requests>=2.25.1 tensorflow~=2.4.1 defusedxml>=0.7.1 urllib3>=1.26.4 requests>=2.25.1
