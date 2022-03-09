@@ -64,8 +64,8 @@ def get_cert():
     if not cert:
         try:
             cert = (
-                os.path.join("/run/secrets", os.environ["ACTION_TLS_CERT"]),
-                os.path.join("/run/secrets", os.environ["ACTION_TLS_KEY"]),
+                "/run/secrets/action_tls_cert",
+                "/run/secrets/action_tls_key",
             )
         except (KeyError, IndexError):
             log.debug("Env vars missing: ACTION_TLS_KEY, ACTION_TLS_CERT")
@@ -73,10 +73,6 @@ def get_cert():
 
 
 def backend_helper():
-    try:
-        log.debug("proxy ".format(os.environ["http_proxy"]))
-    except (KeyError, IndexError):
-        log.error("proxy not found")
     connection_helper = base.Connector(cert=get_cert())
     connection_helper.BASE_URL = "https://apisandbox.openbankproject.com"
     connection_helper.TOKEN = get_jwt()

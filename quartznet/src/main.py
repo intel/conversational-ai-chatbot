@@ -29,12 +29,17 @@ def main():
                 input_wav = io.BytesIO()
 
                 log.debug("Adding Metadata(sample width, channels and framerate) to wave File")
+                # since file is opened using "with", no need to close explicitly
                 with wave.open(input_wav, "wb") as wav:
-                    wav.setsampwidth(config.samplewidth)
-                    wav.setnchannels(config.nchannels)
-                    wav.setframerate(config.sample_rate)
-                    wav.writeframes(data)
-                    wav.close()
+                    try:
+                        wav.setsampwidth(config.samplewidth)
+                        wav.setnchannels(config.nchannels)
+                        wav.setframerate(config.sample_rate)
+                        wav.writeframes(data)
+                    except:
+                        if wav.closed == False:
+                            wav.close()
+
                 data = None
                 transcript = quartz(config.model_loc, input_wav.getvalue())
 

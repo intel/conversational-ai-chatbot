@@ -51,8 +51,13 @@ def _read_docker_secret(secret_name):
     # secret file
     secret = None
     secret_file = os.path.join("/run/secrets", secret_name)
+    # since file is opened using "with", no need to close explicitly
     with open(secret_file) as f:
-        secret = f.read()
+        try:
+            secret = f.read()
+        except:
+            if f.closed == False:
+                f.close()
     return secret
 
 

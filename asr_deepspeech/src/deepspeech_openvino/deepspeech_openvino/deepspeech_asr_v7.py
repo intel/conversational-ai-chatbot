@@ -104,15 +104,22 @@ class Alphabet(object):
         self._label_to_str = []
         self._str_to_label = {}
         self._size = 0
+        # since file is opened using "with", no need to close explicitly
         with codecs.open(alphabet_cfg, "r", "utf-8") as fin:
-            for line in fin:
-                if line[0:2] == "\\#":
-                    line = "#\n"
-                elif line[0] == "#":
-                    continue
-                self._label_to_str += line[:-1]  # remove the line ending
-                self._str_to_label[line[:-1]] = self._size
-                self._size += 1
+            try:
+                for line in fin:
+                    if line[0:2] == "\\#":
+                        line = "#\n"
+                    elif line[0] == "#":
+                        continue
+                    self._label_to_str += line[:-1]  # remove the line ending
+                    self._str_to_label[line[:-1]] = self._size
+                    self._size += 1
+            except Exception as msg:
+                if fin.closed == False:
+                    fin.close()
+                log.error("Received Exception: {}".format(msg))
+
 
     def string_from_label(self, label):
         return self._label_to_str[label]

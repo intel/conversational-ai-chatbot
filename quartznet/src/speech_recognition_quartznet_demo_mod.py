@@ -106,13 +106,18 @@ def main(mymodel, mywave):
     
     #args = build_argparser().parse_args()
 
+    # since file is opened using "with", no need to close explicitly
     with wave.open(io.BytesIO(mywave)) as wave_read:
-        channel_num, sample_width, sampling_rate, pcm_length, compression_type, _ = wave_read.getparams()
-        assert sample_width == 2, "Only 16-bit WAV PCM supported"
-        assert compression_type == 'NONE', "Only linear PCM WAV files supported"
-        assert channel_num == 1, "Only mono WAV PCM supported"
-        assert sampling_rate == 16000, "Only 16 KHz audio supported"
-        audio = np.frombuffer(wave_read.readframes(pcm_length * channel_num), dtype=np.int16).reshape((pcm_length, channel_num))
+        try:
+            channel_num, sample_width, sampling_rate, pcm_length, compression_type, _ = wave_read.getparams()
+            assert sample_width == 2, "Only 16-bit WAV PCM supported"
+            assert compression_type == 'NONE', "Only linear PCM WAV files supported"
+            assert channel_num == 1, "Only mono WAV PCM supported"
+            assert sampling_rate == 16000, "Only 16 KHz audio supported"
+            audio = np.frombuffer(wave_read.readframes(pcm_length * channel_num), dtype=np.int16).reshape((pcm_length, channel_num))
+        except:
+            if wave_read.closed == False:
+                wave_read.close()
     
     log_melspectrum = QuartzNet.audio_to_melspectrum(audio.flatten(), sampling_rate)
     

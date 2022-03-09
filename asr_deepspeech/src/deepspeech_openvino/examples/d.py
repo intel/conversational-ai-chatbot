@@ -54,23 +54,27 @@ def build_argparser():
 
 
 def read_wave_to_buffer(wavefile):
-    wave_read = wave.open(args.input, "rb")
-    (
-        channel_num,
-        sample_width,
-        sampling_rate,
-        pcm_length,
-        compression_type,
-        _,
-    ) = wave_read.getparams()
-    assert sample_width == 2, "Only 16-bit WAV PCM supported"
-    assert compression_type == "NONE", "Only linear PCM WAV files supported"
-    assert channel_num == 1, "Only mono WAV PCM supported"
-    audio = np.frombuffer(
-        wave_read.readframes(pcm_length * channel_num), dtype=np.int16
-    ).reshape((pcm_length, channel_num))
-    wave_read.close()
-    return audio
+    # since file is opened using "with", no need to close explicitly
+    with wave.open(args.input, "rb") as wave_read:
+        try:
+            (
+                channel_num,
+                sample_width,
+                sampling_rate,
+                pcm_length,
+                compression_type,
+                _,
+            ) = wave_read.getparams()
+            assert sample_width == 2, "Only 16-bit WAV PCM supported"
+            assert compression_type == "NONE", "Only linear PCM WAV files supported"
+            assert channel_num == 1, "Only mono WAV PCM supported"
+            audio = np.frombuffer(
+                wave_read.readframes(pcm_length * channel_num), dtype=np.int16
+            ).reshape((pcm_length, channel_num))
+            return audio
+        except:
+            if wave_read.closed == False:
+                wave_read.close()
 
 
 def main():

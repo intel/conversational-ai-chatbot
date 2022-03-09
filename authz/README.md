@@ -95,7 +95,7 @@ python main.py
 
 ## Pre-requisites
 - 0MQ
-- OpenVINO&trade; 2021.3
+- OpenVINO&trade; 2020.4
 - python3
 
 ## Data Formats

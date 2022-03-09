@@ -35,12 +35,18 @@ def publish_pcm(Outport, file):
     if session_valid:
         import wave
 
+        # since file is opened using "with", no need to close explicitly
         with wave.open(io.BytesIO(file)) as f:
-            data = f.readframes(-1)
-            login = login_watcher.session_id
-            h = Outport.update_session_id(login)
-            log.debug("Publishing the Data")
-            return Outport.push(data, "pcm")
+            try:
+                data = f.readframes(-1)
+                login = login_watcher.session_id
+                h = Outport.update_session_id(login)
+                log.debug("Publishing the Data")
+                return Outport.push(data, "pcm")
+            except Exception as msg:
+                if f.closed == False:
+                    f.close()
+                log.error("Received Exception %s", msg)
     log.debug("Session Invalid")
 
 
@@ -58,15 +64,21 @@ def task(quit_event, op):
                 recorded_wav = io.BytesIO()
                 log.debug("Recorded Audio")
 
+                # since file is opened using "with", no need to close explicitly
                 with wave.open(recorded_wav, "wb") as wav:
-                    wav.setsampwidth(config.sample_width)
-                    wav.setnchannels(config.audio_channels)
-                    wav.setframerate(config.bitrate)
-                    # log.debug("Configuring the Wave file with Required Dataset")
-                    # wav.writeframes(frames)
-                    for d in data:
-                        if d:
-                            wav.writeframes(d)
+                    try:
+                        wav.setsampwidth(config.sample_width)
+                        wav.setnchannels(config.audio_channels)
+                        wav.setframerate(config.bitrate)
+                        # log.debug("Configuring the Wave file with Required Dataset")
+                        # wav.writeframes(frames)
+                        for d in data:
+                            if d:
+                                wav.writeframes(d)
+                    except Exception as msg:
+                        log.error("Received Exception %s", msg)
+                        if wav.closed == False:
+                            wav.close()
 
                 log.debug("Trying to Publish")
                 publish_pcm(op, recorded_wav.getvalue())

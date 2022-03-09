@@ -13,8 +13,13 @@ import io
 def write_config(data, config_file):
     if not type(config_file) == (io.StringIO or io.BytesIO):
         context_mgr = open(config_file, "w")
+        # since file is opened using "with", no need to close explicitly
         with context_mgr as f:
-            data = yaml.dump(data, f)
+            try:
+                data = yaml.dump(data, f)
+            except:
+                if f.closed == False:
+                    f.close()
 
 
 # Support StringIO and fileIO
@@ -24,9 +29,14 @@ def load_config(CONFIGFILE):
     else:
         context_mgr = open(CONFIGFILE, "w")
 
+    # since file is opened using "with", no need to close explicitly
     with context_mgr as f:
-        # data = yaml.load(f, Loader = yaml.FullLoader)
-        data = yaml.safe_load(f)
+        try:
+            # data = yaml.load(f, Loader = yaml.FullLoader)
+            data = yaml.safe_load(f)
+        except:
+            if f.closed == False:
+                f.close()
     try:
         global BASE_URL, API_VERSION
         BASE_URL = data["credentials"]["URL"]
