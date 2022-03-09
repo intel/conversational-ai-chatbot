@@ -4,6 +4,7 @@
  SPDX-License-Identifier: BSD-3-Clause
 """
 
+import os
 from obp_api import atm, banks, accounts
 from obp_api import base
 from argparse import ArgumentParser, SUPPRESS
@@ -26,10 +27,6 @@ def build_argparser():
 
 
 def backend_helper(config_file):
-    try:
-        log.info("proxy ".format(os.environ["http_proxy"]))
-    except (KeyError, IndexError):
-        log.info("proxy not found")
     connection_helper = base.Connector(config_file)
     connection_helper.login()
     return connection_helper
@@ -47,7 +44,8 @@ def main():
         texti = "\n".join(list(banknames))
     except Exception:
         texti = "Could not get bank list"
-    print(texti)
+
+    #print(texti)
 
 
 if __name__ == "__main__":

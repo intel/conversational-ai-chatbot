@@ -12,11 +12,11 @@ RUN [ ! -z "${APT_MIRROR_URL}" ] && sed -i -e "s#http://deb.debian.org#${APT_MIR
 WORKDIR /code
 
 # copy the dependencies file to the working directory
-COPY huggingface_asr/requirement.txt .
+COPY huggingface_asr/requirements.txt .
 
 # install dependencies
 RUN apt-get update -y && apt-get install libsndfile1 -y
-RUN pip install -r requirement.txt
+RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
 COPY  huggingface_asr/ .

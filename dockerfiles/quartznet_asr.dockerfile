@@ -39,7 +39,7 @@ COPY --from=builder /home/openvino/Models /Models
 COPY --from=builder /app /app
 
 
-RUN pip install -r /app/requirement.txt
+RUN pip install -r /app/requirements.txt
 
 # Installing ZMQ wrapper
 COPY integration_library /app/src//integration_library

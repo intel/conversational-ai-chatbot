@@ -30,9 +30,14 @@ def preprocess_sound(audio_rev, stt):
 def get_profile(profile_name):
     if profile_name in PROFILES:
         return PROFILES[profile_name]
+    # since file is opened using "with", no need to close explicitly
     with open(profile_name, "rt") as f:
-        profile = yaml.safe_load(f)
-    return profile
+        try:
+            profile = yaml.safe_load(f)
+        except:
+            if f.closed == False:
+                f.close()
+        return profile
 
 
 beam_width = 500

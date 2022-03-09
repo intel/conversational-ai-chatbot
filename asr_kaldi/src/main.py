@@ -73,13 +73,19 @@ def process_pcm_data(data, manager, Outport):
     sv.write(out, 16000, data_)
 
     def buffer_generator(file):
+        # since file is opened using "with", no need to close explicitly
         with wave.open(file, "rb") as f:
-            frames_per_buffer = 160
-            frames = f.readframes(frames_per_buffer)
-            log.debug("Generating Frames")
-            while frames:
-                yield frames
+            try:
+                frames_per_buffer = 160
                 frames = f.readframes(frames_per_buffer)
+                log.debug("Generating Frames")
+                while frames:
+                    yield frames
+                    frames = f.readframes(frames_per_buffer)
+            except Exception as msg:
+                log.error("Received Exception %s", msg)
+                if f.closed == False:
+                    f.close()
 
     log.debug("Push Data to Speech Manager")
     for d in buffer_generator(out):

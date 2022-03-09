@@ -38,12 +38,17 @@ def build_argparser():
 
 
 def buffer_generator(file):
+    # since file is opened using "with", no need to close explicitly
     with wave.open(file, "rb") as f:
-        frames_per_buffer = 160
-        frames = f.readframes(frames_per_buffer)
-        while frames:
-            yield frames
+        try:
+            frames_per_buffer = 160
             frames = f.readframes(frames_per_buffer)
+            while frames:
+                yield frames
+                frames = f.readframes(frames_per_buffer)
+        except:
+            if f.closed == False:
+                f.close()
 
 
 def main():
