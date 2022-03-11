@@ -2,30 +2,18 @@
 
 import os
 import sys
+import click
 import shlex
 import time
 import logging
 from subprocess import run, PIPE
+
 
 MODULE = "."
 CURRENT_DIR = os.getcwd()
 SOCKET_DIR = "ipcSocket"
 TMP_FILE = "/tmp/script.log"
 AUDIO_FILE = "record.wav"
-
-DOCKER_IMAGES = [
-    "deepspeech_asr:1.0",
-    "kaldi_asr:1.0",
-    "huggingface_asr:1.0",
-    "quartznet_asr:1.0",
-    "audio-ingester:1.0",
-    "audio-ingester2:1.0",
-    "tts:1.0",
-    "authz:1.0",
-    "rasa:1.10.1",
-    "nlp_app:1.0",
-    "action_server:1.0",
-]
 
 DOCKER_SECRETS = [
     "jwtalgo",
@@ -43,11 +31,35 @@ DOCKER_SECRETS = [
     "nlp_tls_cacert",
 ]
 
-CONTAINERS_WAVE_INGESTION = [
-    "chatfrontend_wave_ingestion_1", "chatfrontend_tts_1"]
+DOCKER_IMAGES = [
+    "deepspeech_asr:1.0",
+    "kaldi_asr:1.0",
+    "huggingface_asr:1.0",
+    "quartznet_asr:1.0",
+    "audio-ingester:1.0",
+    "audio-ingester2:1.0",
+    "tts:1.0",
+    "authz:1.0",
+    "rasa:1.10.1",
+    "nlp_app:1.0",
+    "action_server:1.0",
+]
 
-CONTAINERS_LIVE_INGESTION = [
-    "chatfrontend_audio_ingestion_1", "chatfrontend_tts_1"]
+BASE_DOCKER_IMAGES = [
+    "python:3.6-slim-buster",
+    "rasa:1.10.1",
+    "openvino/ubuntu18_data_dev:2021.3",
+    "openvino/ubuntu18_runtime:2021.3",
+    "openvino/ubuntu18_data:2020.4",
+    "openvino/ubuntu18_runtime:2021.4",
+    "openvino/ubuntu18_dev:2021.4",
+    "ubuntu:18.04",
+    "hello-world:latest",
+]
+
+CONTAINERS_WAVE_INGESTION = ["chatfrontend_wave_ingestion_1", "chatfrontend_tts_1"]
+
+CONTAINERS_LIVE_INGESTION = ["chatfrontend_audio_ingestion_1", "chatfrontend_tts_1"]
 
 SERVICES = [
     "chatbackend_asr_speech",
@@ -55,6 +67,16 @@ SERVICES = [
     "chatbackend_rasa_action",
     "chatbackend_nlp_app",
 ]
+
+
+class ConversationalAIException(Exception):
+    """
+    Exception handling class
+    """
+
+    def __init__(self, message):
+        print("[Error]: {}".format(message))
+        sys.exit(-1)
 
 
 class CustomFormatter(logging.Formatter):
@@ -96,14 +118,9 @@ class SetAudioDevice(object):
         self.log = self.set_logger(log_file)
         self.str_len = 50
         self.cwd = os.getcwd()
+        self.http_proxy = os.getenv("http_proxy", default="")
+        self.https_proxy = os.getenv("https_proxy", default="")
         self.socketDir = "{}/{}/{}".format(self.cwd, MODULE, SOCKET_DIR)
-        self.tag = os.environ["TAG"]
-        self.asr_image = os.environ["ASR_IMAGE"]
-        self.obp_username = os.environ["OBP_USERNAME"]
-        self.obp_pass = os.environ["OBP_PASS"]
-        self.obp_apikey = os.environ["OBP_APIKEY"]
-        self.http_proxy = os.environ["http_proxy"]
-        self.https_proxy = os.environ["https_proxy"]
 
     def set_logger(self, log_file):
         Logger = logging.getLogger()
@@ -136,8 +153,7 @@ class SetAudioDevice(object):
         """
         try:
             final_command = shlex.split(command)
-            status = run(final_command, input=input,
-                         stdout=stdout, stderr=stderr)
+            status = run(final_command, input=input, stdout=stdout, stderr=stderr)
             if get_output:
                 return status
             if status.returncode:
@@ -148,12 +164,24 @@ class SetAudioDevice(object):
                     self.log.error(error.decode("utf-8"))
                 return False
             return True
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
+
+    def read_host_proxy_setting(self):
+        print("")
+        print("|====HTTP & HTTPS=================|")
+        print(
+            "If the host system is under proxy network then app will use host system's proxy settings"
+        )
+        self.http_proxy = os.getenv("http_proxy", default="")
+        self.https_proxy = os.getenv("https_proxy", default="")
+        print("")
 
     def create_alsa_image(self):
         cmds = [
-            'sudo docker run -it -u 0 --name alsa_expt ubuntu:18.04 sh -c "apt-get update > /dev/null && apt-get install -y alsa-utils"',
+            "sudo docker run -it --env http_proxy={0} --env https_proxy={1} --env HTTP_PROXY={0} --env HTTPS_PROXY={1} -u 0 --name alsa_expt ubuntu:18.04 sh -c 'apt update > /dev/null && apt install -y alsa-utils'".format(
+                self.http_proxy, self.https_proxy
+            ),
             "sudo docker commit alsa_expt alsa_expt",
         ]
         for cmd in cmds:
@@ -231,12 +259,21 @@ class SetAudioDevice(object):
                 )
 
         return list(
-            map(lambda x: ("".join(x[0].split()),
-                "".join(x[1].split())), set(rds))
+            map(lambda x: ("".join(x[0].split()), "".join(x[1].split())), set(rds))
         )
 
     def test_audio_usecase(self, recording_device, playback_device):
+        print("|====DEVICE TEST==================|")
+        print("Let's determine if the devices you chose are supported.")
+        print(
+            "* Speak or make noise in the direction of your microphone to create a recording."
+        )
+        print("* We will record for 20 seconds.")
+        print("* The recorded sound will be played back after 20 seconds recording.")
+        print("* Make sure your volume is at the appropriate level.\n")
         duration = 20
+        input("Press <Enter> key to begin recording:")
+        print("Recording started")
         cmds = [
             'sudo docker run -it --rm --privileged -u 0 -v {2}:/data --device=/dev/snd alsa_expt sh -c "export ALSA_PCM_CARD={0}; arecord -c 1 -r 16000 -d {3} -f S16_LE /data/{4}; chmod 777 /data/{4}; sleep 2; export ALSA_PCM_CARD='
             '; export ALSA_CARD={1}; aplay /data/{4} > /data/sound.tmp 2>&1; chmod 777 /data/sound.tmp"'.format(
@@ -273,7 +310,9 @@ class SetAudioDevice(object):
         rec, play = (None, None)
         rec_name = None
 
-        print("Choose a recording device and a playback device to test")
+        print("")
+        print("|====RECORDING====================|")
+        # print("Choose a recording device and a playback device to test")
 
         while True:
             # self.log.info("Please choose a recording device and a playback device to test")
@@ -288,42 +327,39 @@ class SetAudioDevice(object):
             if not rec_name:
 
                 print(
-                    "Available recording devices: {}".format(
-                        self.get_recorders_name(recorders)
-                    )
+                    "Recording devices: {}".format(self.get_recorders_name(recorders))
                 )
 
                 rec_name = input("Choose Recording Device (case sensitive): ")
                 if rec_name not in list(map(lambda x: x[0], recorders)):
-                    self.log.warn("Choose the correct recording device")
+                    print("[Warning]: Choose the correct recording device")
                     rec_name = None
                     continue
                 rec = self.get_recorder_number(recorders, rec_name)
+            print(f"You chose {rec_name} for recording")
 
-            print("Available playback devices: {}".format(players))
+            print("")
+            print("|====PLAYBACK=====================|")
+            print("Playback devices: {}".format(players))
             play = input("Choose Playback Device (case sensitive): ")
             if play not in players:
-                self.log.warn("Choose the correct playback device")
+                print("[Warning]: Choose the correct playback device")
                 continue
-            print(
-                f"You chose {rec_name} for recording and {play} for playback")
-            print(
-                "Please speak for 20s. Your voice will be recorded for 20s and played back"
-            )
-            self.test_audio_usecase(rec, play)
-            output = input("Do you hear the audio? Yes/No: ")
+            print(f"You chose {play} for playback")
 
-            if output.lower() == "yes":
+            print("")
+            self.test_audio_usecase(rec, play)
+
+            print("")
+            output = input("Do you hear the audio? (y/n): ")
+
+            if output.lower() == "y":
+                print("Great! Let's move on.")
                 break
             else:
-                self.log.error(
-                    "Plug in another audio device and start the installation again."
-                )
-                self.clean_up()
-                sys.exit()
-
-        print("recording device: {}".format(rec_name))
-        print("playback device: {}".format(play))
+                # message = "[ERROR]: Plug in another audio device and start the installation again."
+                # print(message)
+                return (None, None)
 
         return (rec, play)
 
@@ -332,18 +368,24 @@ class SetAudioDevice(object):
         set audio recording and playback devices
         """
         try:
-            self.log.info("Setting up audio device for recording and playback")
+            print("Setting up audio device for recording and playback")
+            print("")
+            print("|====AUDIO DEVICE LIST============|")
+            print("Retrieving audio device list")
             self.create_alsa_image()
             rec, playback = self.user_prompt()
             self.clean_up()
             if rec and playback:
                 self.alsa_card = playback
                 self.alsa_pcm_card = rec
-                self.log.debug(
-                    "[SUCCESS]: Setting up audio device for recording and playback"
-                )
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+                # self.log.debug(
+                #     "[SUCCESS]: Setting up audio device for recording and playback"
+                # )
+                return True
+            else:
+                return False
+        except Exception as err:
+            ConversationalAIException(err)
 
 
 class ConversationalAI(SetAudioDevice):
@@ -353,6 +395,116 @@ class ConversationalAI(SetAudioDevice):
 
     def __init__(self, module_path, output_path):
         super(ConversationalAI, self).__init__(module_path, output_path)
+
+    def set_pip_and_apt_mirror(self):
+        self.pip_index_url = "https://pypi.org/simple"
+        self.apt_mirror_url = "http://archive.ubuntu.com"
+        self.deb_mirror_url = "http://deb.debian.org"
+
+    def set_build_env(self):
+        self.tag = "1.0"
+        self.http_proxy = os.getenv("http_proxy", default="")
+        self.https_proxy = os.getenv("https_proxy", default="")
+        self.set_pip_and_apt_mirror()
+
+    def set_docker_image_tag(self):
+        print("")
+        print("|====VERSION TAG==================|")
+        print("\nTAG: 1.0 (Default)")
+        print("")
+        self.tag = "1.0"
+        # os.environ["TAG"] = "1.0"
+
+    def set_audio_ingestion(self):
+        print("|====AUDIO INGESTION==============|")
+        while 1:
+            status = input(
+                "Audio ingestion types\n 1. wave_ingestion (recommended for first-time configuration)\n 2. speech_ingestion\nChoose an option to proceed(e.g., 1) : "
+            )
+            if status == "1":
+                self.ingestion_type = "wave_ingestion"
+                break
+            elif status == "2":
+                self.ingestion_type = "speech_ingestion"
+                break
+            else:
+                print("Choose correct ingestion type.")
+                continue
+        print("")
+
+    def set_asr_models(self):
+        print("|====ASR MODELS===================|")
+        while 1:
+            status = input(
+                "ASR models\n 1. quartznet_asr (recommended)\n 2. kaldi_asr\n 3. deepspeech_asr\n 4. huggingface_asr\nChoose an option to proceed(e.g., 1) : "
+            )
+            if status == "1":
+                self.asr_image = "quartznet_asr"
+                break
+            elif status == "2":
+                self.asr_image = "kaldi_asr"
+                break
+            elif status == "3":
+                self.asr_image = "deepspeech_asr"
+                break
+            elif status == "4":
+                self.asr_image = "huggingface_asr"
+                break
+            else:
+                print("Choose correct ASR mdoel.")
+                continue
+        print("")
+
+    def get_obp_creds(self):
+        print("|====OBP Banking Credentials======|")
+        self.obp_username = input("Enter OBP USERNAME: ")
+        self.obp_pass = input("Enter OBP PASSWORD: ")
+        self.obp_apikey = input("Enter OBP APIKEY: ")
+
+    def log_configuration_settings(self):
+        os.environ["TAG"] = "1.0"
+        os.environ["ASR_IMAGE"] = self.asr_image
+        os.environ["INGESTION_TYPE"] = self.ingestion_type
+
+        self.log.info("TAG={}".format(self.tag))
+        self.log.info("ASR_IMAGE={}".format(self.asr_image))
+        self.log.info("INGESTION_TYPE={}".format(self.ingestion_type))
+        self.log.info("PIP_INDEX_URL={}".format(self.pip_index_url))
+        self.log.info("DEB_MIRROR_URL={}".format(self.deb_mirror_url))
+        self.log.info("APT_MIRROR_URL={}".format(self.apt_mirror_url))
+        self.log.info("ALSA_CARD={}".format(self.alsa_card))
+        self.log.info("ALSA_PCM_CARD={}".format(self.alsa_pcm_card))
+        self.log.info("http_proxy={}".format(self.http_proxy))
+        self.log.info("https_proxy={}".format(self.https_proxy))
+
+    def set_variables(self):
+        """
+        Set environmental variables
+        """
+        time.sleep(1)
+        # print("\n")
+        self.log.info("Set environmental variables")
+        print("|====CONFIGURATION BEGIN==========|")
+        status = self.set_device()
+        if not status:
+            self.log.error(
+                "[ERROR]: Plug in another audio device and start the installation again."
+            )
+            sys.exit(-1)
+
+        self.set_docker_image_tag()
+        self.set_audio_ingestion()
+        self.set_asr_models()
+        # self.set_pip_and_apt_mirror()
+        self.get_obp_creds()
+        self.read_host_proxy_setting()
+        print("|====CONFIGURATION END============|")
+        print("")
+
+        os.environ["TAG"] = "1.0"
+        os.environ["ASR_IMAGE"] = self.asr_image
+        os.environ["INGESTION_TYPE"] = self.ingestion_type
+        # self.log_configuration_settings()
 
     def create_directory(self, directory):
         """
@@ -395,8 +547,7 @@ class ConversationalAI(SetAudioDevice):
         try:
             self.log.info("Checking dependencies")
             self.run_command("docker -v", message="Docker is not Installed")
-            status = self.run_command(
-                "systemctl is-active docker", get_output=True)
+            status = self.run_command("systemctl is-active docker", get_output=True)
             if status.returncode == 3:
                 message = "Docker engine is not running!"
             self.run_command("sudo docker rmi -f hello-world")
@@ -406,8 +557,8 @@ class ConversationalAI(SetAudioDevice):
                 "sudo docker-compose --version",
                 message="docker-compose is not Installed",
             )
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
     def init_swarm(self):
         """
@@ -417,7 +568,9 @@ class ConversationalAI(SetAudioDevice):
         try:
             self.log.info("Initializing docker swarm")
             time.sleep(1)
+
             command = f"sudo docker swarm init"
+            # command = f"sudo docker swarm init"
             status = self.run_command(command, get_output=True)
             if status.returncode:
                 error = status.stderr.decode("utf-8")
@@ -427,8 +580,8 @@ class ConversationalAI(SetAudioDevice):
                     output = retval.stdout.decode("utf-8").split("\n")
                     if len(output) == 2:
                         return True
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
     def build_docker_images(self):
         """
@@ -441,77 +594,117 @@ class ConversationalAI(SetAudioDevice):
             )
 
             self.log.info("Building deepspeech docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/deepspeech8_asr.dockerfile -t deepspeech_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/deepspeech8_asr.dockerfile -t deepspeech_asr:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
             )
-            self.run_command(
-                command, "Failed to build deepspeech docker imgae")
+            self.run_command(command, "Failed to build deepspeech docker image")
 
             self.log.info("Building kaldi docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/kaldi_asr.dockerfile -t kaldi_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/kaldi_asr.dockerfile -t kaldi_asr:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
             )
-            self.run_command(command, "Failed to build kaldi docker imgae")
-
-            self.log.info("Building quartznet docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/quartznet_asr.dockerfile -t quartznet_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
-            )
-            self.run_command(command, "Failed to build quartznet docker imgae")
+            self.run_command(command, "Failed to build kaldi docker image")
 
             self.log.info("Building huggingface docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/huggingface_asr.dockerfile -t huggingface_asr:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/huggingface_asr.dockerfile -t huggingface_asr:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.deb_mirror_url,
+                self.tag,
             )
-            self.run_command(
-                command, "Failed to build huggingface docker imgae")
+            self.run_command(command, "Failed to build huggingface docker image")
+
+            self.log.info("Building quartznet docker image.")
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/quartznet_asr.dockerfile -t quartznet_asr:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
+            )
+            self.run_command(command, "Failed to build quartznet docker image")
 
             self.log.info("Building audio-ingester docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/audio_ingestion.dockerfile  -t audio-ingester:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/audio_ingestion.dockerfile  -t audio-ingester:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
             )
-            self.run_command(
-                command, "Failed to build audio-ingester docker imgae")
+            self.run_command(command, "Failed to build audio-ingester docker image")
 
             self.log.info("Building audio-ingester2 docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/audio_ingestion2.dockerfile  -t audio-ingester2:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/audio_ingestion2.dockerfile  -t audio-ingester2:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
             )
-            self.run_command(
-                command, "Failed to build audio-ingester2 docker imgae")
+            self.run_command(command, "Failed to build audio-ingester2 docker image")
 
             self.log.info("Building tts docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/tts.dockerfile  -t tts:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/tts.dockerfile  -t tts:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
             )
-            self.run_command(command, "Failed to build tts docker imgae")
+            self.run_command(command, "Failed to build tts docker image")
 
             self.log.info("Building authz docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/authz.dockerfile -t authz:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/authz.dockerfile -t authz:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.deb_mirror_url,
+                self.tag,
             )
-            self.run_command(command, "Failed to build authz docker imgae")
+            self.run_command(command, "Failed to build authz docker image")
 
-            self.log.info("Building nlp_app docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/nlp.dockerfile -t nlp_app:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            self.log.info("Building nlp docker image.")
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/nlp.dockerfile -t nlp_app:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.deb_mirror_url,
+                self.tag,
             )
-            self.run_command(command, "Failed to build nlp_app docker imgae")
+            self.run_command(command, "Failed to build nlp docker image")
 
             self.log.info("Building rasa docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/rasa.dockerfile -t rasa:1.10.1 .".format(
-                self.http_proxy, self.https_proxy
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/rasa.dockerfile -t rasa:1.10.1 .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.deb_mirror_url,
             )
-            self.run_command(command, "Failed to build rasa docker imgae")
+            self.run_command(command, "Failed to build rasa docker image")
 
             self.log.info("Building action_server docker image.")
-            command = "sudo -E docker build --rm --build-arg HTTP_PROXY={} --build-arg HTTPS_PROXY={} -f dockerfiles/rasa_action_server.dockerfile -t action_server:{} .".format(
-                self.http_proxy, self.https_proxy, self.tag
+            command = "sudo -E docker build --rm --build-arg http_proxy={0} --build-arg https_proxy={1} --build-arg HTTP_PROXY={0} --build-arg HTTPS_PROXY={1} --build-arg PIP_INDEX_URL={2} --build-arg APT_MIRROR_URL={3} -f dockerfiles/rasa_action_server.dockerfile -t action_server:{4} .".format(
+                self.http_proxy,
+                self.https_proxy,
+                self.pip_index_url,
+                self.apt_mirror_url,
+                self.tag,
             )
-            self.run_command(
-                command, "Failed to build action_server docker imgae")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+            self.run_command(command, "Failed to build action_server docker image")
+            os.chdir(self.cwd)
+
+        except Exception as err:
+            ConversationalAIException(err)
 
     def create_docker_secrets(self):
         """
@@ -522,8 +715,8 @@ class ConversationalAI(SetAudioDevice):
             self.log.info("Creating Docker Secrets")
             command = "sudo bash create_secrets.sh".format(MODULE)
             self.run_command(command, "Failed to create docker secrets")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
     def create_docker_volume(self):
         """
@@ -535,8 +728,8 @@ class ConversationalAI(SetAudioDevice):
                 self.socketDir
             )
             self.run_command(command, "Failed to create docker volume")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
     def update_obp_creds(self):
         """
@@ -558,8 +751,8 @@ class ConversationalAI(SetAudioDevice):
                 self.obp_apikey
             )
             self.run_command(command, "Failed to update D_APIKEY variable")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
     def update_audio_device(self):
         try:
@@ -575,46 +768,73 @@ class ConversationalAI(SetAudioDevice):
             command = "sudo sed -i 's/- ALSA_PCM_CARD.*/- ALSA_PCM_CARD={}/g' compose/docker-compose-frontend-respeaker.yml".format(
                 self.alsa_pcm_card
             )
-            self.run_command(
-                command, "Failed to update ALSA_PCM_CARD variable")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+            self.run_command(command, "Failed to update ALSA_PCM_CARD variable")
+        except Exception as err:
+            ConversationalAIException(err)
 
-    def start_chatbot_services(self, ingestion_type):
+    def start_chatbot_services(self):
         """
         Start Chatbot Services
         """
         try:
             self.log.info("Starting Chatbot Services")
             # cwd = os.getcwd()
-            command = "sudo -E docker stack deploy -c compose/docker-compose-backend.yml chatbackend"
-            self.run_command(command, "Failed to deploy chabot backend stack")
-            if ingestion_type == "speech_ingestion":
+            print("\n")
+            print("|====DEPLOYMENT BEGIN=============|")
+
+            if self.ingestion_type == "speech_ingestion":
+                print("")
+                print(
+                    "* After the deployment completes, wake the chatbot by speaking into your microphone."
+                )
+                print('* Say "[Wake word][pause][Hello]".')
+                print("* Make sure your volume is set to the appropriate level.")
+                print("* See documentation for details and sample phrases.")
+                print("")
                 command = "sudo -E docker-compose -p chatfrontend -f compose/docker-compose-frontend-respeaker.yml up -d"
             else:
+                print(
+                    "* After the deployment completes, the chatbot automatically starts cycling."
+                )
+                print("  through pre-recorded queries and responses.")
+                print(
+                    "* Make sure your volume is set to the appropriate level to listen."
+                )
+                print("* See documentation for details.")
+                print("")
                 command = "sudo -E docker-compose -p chatfrontend -f compose/docker-compose-frontend.yml up -d"
-            self.run_command(
-                command, "Failed to deploy chabot frontend compose")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
 
-    def stop_chatbot_services(self, ingestion_type):
+            self.run_command(command, "Failed to deploy chabot frontend compose")
+
+            command = "sudo -E docker stack deploy -c compose/docker-compose-backend.yml chatbackend"
+            self.run_command(command, "Failed to deploy chabot backend stack")
+            print("|====DEPLOYMENT END===============|")
+            print("")
+        except Exception as err:
+            ConversationalAIException(err)
+
+    def stop_chatbot_services(self):
         """
         Stop Chatbot Services
         """
         try:
-            # cwd = os.getcwd()
             self.log.info("Removing Chatbot Services")
-            if ingestion_type == "speech_ingestion":
-                command = "sudo -E docker-compose -p chatfrontend -f compose/docker-compose-frontend-respeaker.yml down"
-            else:
-                command = "sudo -E docker-compose -p chatfrontend -f compose/docker-compose-frontend.yml down"
-            self.run_command(command, "Failed to remove chatbot services")
-
+            CONTAINERS = [
+                "chatfrontend_audio_ingestion_1",
+                "chatfrontend_wave_ingestion_1",
+                "chatfrontend_tts_1",
+            ]
+            for container in CONTAINERS:
+                command = "sudo docker rm -f {}".format(container)
+                self.run_command(
+                    command, "Failed to remove chatbot services", mandatory=False
+                )
             command = "sudo docker stack rm chatbackend"
-            self.run_command(command, "Failed to remove chatbot services")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+            self.run_command(
+                command, "Failed to remove chatbot services", mandatory=False
+            )
+        except Exception as err:
+            ConversationalAIException(err)
 
     def remove_docker_secrets_and_volume(self):
         """
@@ -623,8 +843,7 @@ class ConversationalAI(SetAudioDevice):
         try:
             self.log.info("Removing Docker Volume")
             command = "sudo docker volume rm zmq_ipc_vol"
-            self.run_command(
-                command, "Failed to remove docker volume", mandatory=False)
+            self.run_command(command, "Failed to remove docker volume", mandatory=False)
             self.log.info("Removing Docker Secrets")
             for secret in DOCKER_SECRETS:
                 command = "sudo docker secret rm {}".format(secret)
@@ -633,8 +852,34 @@ class ConversationalAI(SetAudioDevice):
                     "Failed to remove docker secret {}".format(secret),
                     mandatory=False,
                 )
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
+
+    def remove_docker_images(self):
+        """
+        Remove docker images
+        """
+        try:
+            self.log.info("Removing Docker Images")
+            for image in DOCKER_IMAGES:
+                command = "sudo docker rmi -f {}".format(image)
+                self.run_command(
+                    command, "Failed to remove docker image {}".format(image)
+                )
+            for image in BASE_DOCKER_IMAGES:
+                command = "sudo docker rmi -f {}".format(image)
+                self.run_command(
+                    command, "Failed to remove docker image {}".format(image)
+                )
+            command = "sudo docker image prune -f"
+            # self.log.info(command)
+            self.run_command(
+                command,
+                "Failed to remove dangling docker image {}",
+                mandatory=False,
+            )
+        except Exception as err:
+            ConversationalAIException(err)
 
     def verify_images(self):
         """
@@ -647,8 +892,7 @@ class ConversationalAI(SetAudioDevice):
                 command = f"sudo docker images {image}"
                 status = self.run_command(command, get_output=True)
                 if status.returncode:
-                    self.log.error(
-                        "[ERROR]: Failed to verify {} image".format(image))
+                    self.log.error("[ERROR]: Failed to verify {} image".format(image))
                 output = status.stdout.decode("utf-8").split("\n")
                 output = [i for i in output if i]
                 exists = False
@@ -667,12 +911,11 @@ class ConversationalAI(SetAudioDevice):
                     images_not_found,
                 )
             else:
-                self.log.debug(
-                    "[SUCCESS]: All required docker images are built.")
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+                self.log.debug("[SUCCESS]: All required docker images are built.")
+        except Exception as err:
+            ConversationalAIException(err)
 
-    def verify_containers(self, ingestion_type):
+    def verify_containers(self):
         """
         Verify if the required containers are running
         :return:
@@ -680,7 +923,7 @@ class ConversationalAI(SetAudioDevice):
         try:
             # self.log.info("Verifying the required containers")
             not_found = []
-            if ingestion_type == "speech_ingestion":
+            if self.ingestion_type == "speech_ingestion":
                 CONTAINERS = CONTAINERS_LIVE_INGESTION
             else:
                 CONTAINERS = CONTAINERS_WAVE_INGESTION
@@ -692,8 +935,7 @@ class ConversationalAI(SetAudioDevice):
                 status = self.run_command(command, get_output=True)
                 if status.returncode:
                     self.log.error(
-                        "[ERROR]: Failed to verify {} container".format(
-                            container)
+                        "[ERROR]: Failed to verify {} container".format(container)
                     )
                 output = status.stdout.decode("utf-8").split("\n")
                 output = [i for i in output if i]
@@ -707,8 +949,8 @@ class ConversationalAI(SetAudioDevice):
                 if not exists:
                     not_found.append(container)
             return not_found
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
     def verify_services(self):
         """
@@ -740,10 +982,10 @@ class ConversationalAI(SetAudioDevice):
                 if not found:
                     not_found.append(service)
             return not_found, not_started
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
-    def verify_chatbot_services(self, ingestion_type):
+    def verify_chatbot_services(self):
         """
         Verify if the Chatbot is installed or not
         :return: True if installed else False
@@ -752,7 +994,7 @@ class ConversationalAI(SetAudioDevice):
             self.log.info("Verifying Chatbot Services")
             result = False
             time.sleep(30)
-            containers_not_found = self.verify_containers(ingestion_type)
+            containers_not_found = self.verify_containers()
             service_not_found, service_not_started = self.verify_services()
             if (
                 not containers_not_found
@@ -772,82 +1014,58 @@ class ConversationalAI(SetAudioDevice):
                     )
                 )
             else:
-                self.log.debug(
-                    "[SUCCESS]: Conversational AI Chat Bot is installed.")
+                self.log.debug("[SUCCESS]: Conversational AI Chat Bot is installed.")
                 return True
-        except Exception as msg:
-            self.log.error("[ERROR]: Received Exception %s", msg)
+        except Exception as err:
+            ConversationalAIException(err)
 
-    def build(self):
-        """
-        Method to call main_install and main_post_install with exception handling
-        :return: status :type: bool
-        """
-        self.check_dependencies()
-        self.build_docker_images()
-        self.verify_images()
-        return True
 
-    def run(self, ingestion_type):
-        """
-        Method to call main_install and main_post_install with exception handling
-        :return: status :type: bool
-        """
-        self.set_device()
-        self.init_swarm()
-        self.create_directory(self.socketDir)
-        self.change_directory_permission(self.socketDir)
-        self.create_docker_secrets()
-        self.create_docker_volume()
-        self.update_obp_creds()
-        self.update_audio_device()
-        self.start_chatbot_services(ingestion_type)
-        self.verify_chatbot_services(ingestion_type)
-        return True
+@click.group()
+def main():
+    """A CLI wrapper for management of Conversational-AI services."""
 
-    def stop(self, ingestion_type):
-        """
-        Uninstall Chatbot
-        :return: True for successful uninstallation
-        """
-        self.log.info("Cleaning up")
-        self.stop_chatbot_services(ingestion_type)
-        time.sleep(45)
-        self.remove_docker_secrets_and_volume()
-        return True
 
-    def help(self):
-        """
-        Help messge
-        """
-        self.log.info(
-            "Setup tool only supports\n\t1.build\n\t2.run wave_ingestion OR run speech_ingestion\n\t3.stop wave_ingestion or stop speech_ingestion\n\t4.help"
-        )
+@main.command()
+def install():
+    """Build Conversational-AI docker images."""
+    app.check_dependencies()
+    app.set_build_env()
+    app.build_docker_images()
+    app.verify_images()
+
+
+@main.command()
+def uninstall():
+    """Delete Conversational-AI docker images."""
+    app.remove_docker_images()
+
+
+@main.command()
+def start():
+    """Deploy Conversational-AI microservices"""
+    app.set_variables()
+    app.verify_images()
+    app.init_swarm()
+    app.create_directory(SOCKET_DIR)
+    app.change_directory_permission(SOCKET_DIR)
+    app.create_docker_secrets()
+    app.create_docker_volume()
+    app.update_obp_creds()
+    app.update_audio_device()
+    app.start_chatbot_services()
+    app.verify_chatbot_services()
+
+
+@main.command()
+def stop():
+    """Stop Conversational-AI microservices"""
+    app.stop_chatbot_services()
+    time.sleep(45)
+    app.remove_docker_secrets_and_volume()
+    app.remove_directory(SOCKET_DIR)
 
 
 if __name__ == "__main__":
     cwd = os.getcwd()
     app = ConversationalAI(cwd, cwd)
-    if sys.argv[1:]:
-        if sys.argv[1] == "build":
-            app.build()
-        elif sys.argv[1] == "run":
-            if sys.argv[2:]:
-                if sys.argv[2] == "speech_ingestion":
-                    app.run("speech_ingestion")
-                else:
-                    app.run("wave_ingestion")
-            else:
-                app.help()
-        elif sys.argv[1] == "stop":
-            if sys.argv[2:]:
-                if sys.argv[2] == "speech_ingestion":
-                    app.stop("speech_ingestion")
-                else:
-                    app.stop("wave_ingestion")
-            else:
-                app.help()
-        else:
-            app.help()
-    else:
-        app.help()
+    main(prog_name="setup")
