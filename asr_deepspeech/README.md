@@ -23,7 +23,7 @@ When using the dockerfile, the model is automatically downloaded.
 
 ### DeepSpeech Version 0.8.2
 
-The model can be downloaded using the `open mode zoo`'s model downloader. 
+The model can be downloaded using the `open mode zoo`'s model downloader.
 A uitlity script to download the model is kept at `scripts/download_model.sh`. It can be used as:
 
 ```bash
@@ -35,16 +35,16 @@ cd scripts
 To use deepspeech version 0.8.2, the deepspeech config file must have
 
 ```
--inference:model_xml "/model/public/mozilla-deepspeech-0.8.2/FP32/mozilla-deepspeech-0.8.2.xml"                                   
+-inference:model_xml "/model/public/mozilla-deepspeech-0.8.2/FP32/mozilla-deepspeech-0.8.2.xml"
 -inference:model_bin "/model/public/mozilla-deepspeech-0.8.2/FP32|speech release 0.5.0](https://github.com/mozilla/DeepSpeech/rele
 /mozilla-deepspeech-0.8.2.xml"
 -inference:lm "/model/public/mozilla-deepspeech-0.8.2/deepspeech-|vinotoolkit.org/latest/_docs_MO_DG_prepare_model_convert_model_t
-0.8.2-models.kenlm" 
+0.8.2-models.kenlm"
 -deepspeech:version: 8
 
 ```
 
-A sample config file for using deepspeech version 8 is `src/model/deepspeech8.cfg`. 
+A sample config file for using deepspeech version 8 is `src/model/deepspeech8.cfg`.
 This would be the default version used by deepspeech.
 
 ## Build
@@ -65,7 +65,7 @@ make docker
 docker run --rm  -e INPUT_TOPIC='audio' -e  INPUT_PORT='6001' -e OUTPUT_TOPIC='text' -e OUTPUT_PORT='6002' -it deepspeech_asr .
 ```
 
-or 
+or
 
 ```
 make run
@@ -117,6 +117,3 @@ publish_pcm(Outport, "somefile.wav")
 - supports audio input which is mono channel sampled at 16K and represented with 2 bytes per sample.
 - supports US english accent.
 - text output for non US english accents may be bad.
-
-
-

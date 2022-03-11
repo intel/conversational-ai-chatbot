@@ -20,11 +20,16 @@ def publish_pcm(Outport, file):
         import wave
 
         log.debug("Reading/Opening the wave file ")
+        # since file is opened using "with", no need to close explicitly
         with wave.open(file) as f:
-            data = f.readframes(-1)
-            Outport.update_session_id(login_watcher.session_id)
-            log.debug("Publishing the Data using 0MQ ")
-            return Outport.push(data, "pcm")
+            try:
+                data = f.readframes(-1)
+                Outport.update_session_id(login_watcher.session_id)
+                log.debug("Publishing the Data using 0MQ ")
+                return Outport.push(data, "pcm")
+            except:
+                if f.closed == False:
+                    f.close()
     log.debug("Session Invalid")
 
 

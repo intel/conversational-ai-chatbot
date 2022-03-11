@@ -34,22 +34,28 @@ def data_generator(wave_path, buffers_per_second=1):
     :param buffers_per_second: How many data chunks should be yielded per second of recording
     :return: Chunk of data as bytes
     """
+    # since file is opened using "with", no need to close explicitly
     with wave.open(wave_path, "rb") as file:
-        if file.getnframes() <= 0:
-            _logger.error("No samples to process")
-            return
-        sample_rate = file.getframerate()
-        channel_count = file.getnchannels()
-        frames_per_buffer = sample_rate // buffers_per_second
-        resampler_state = None
+        try:
+            if file.getnframes() <= 0:
+                _logger.error("No samples to process")
+                return
+            sample_rate = file.getframerate()
+            channel_count = file.getnchannels()
+            frames_per_buffer = sample_rate // buffers_per_second
+            resampler_state = None
 
-        frames = file.readframes(frames_per_buffer)
-        while frames:
-            frames, resampler_state = _resample_frames(
-                frames, channel_count, sample_rate, resampler_state
-            )
-            yield frames
             frames = file.readframes(frames_per_buffer)
+            while frames:
+                frames, resampler_state = _resample_frames(
+                    frames, channel_count, sample_rate, resampler_state
+                )
+                yield frames
+                frames = file.readframes(frames_per_buffer)
+        except Exception as msg:
+            _logger.error("Received Exception %s", msg)
+            if file.closed == False:
+                file.close()
 
 
 def _resample_frames(frames, channel_count, sample_rate, resampler_state=None):
@@ -79,8 +85,12 @@ def check_wave_format(wave_path):
     :param wave_path: Path to WAVE file
     :return: True format is supported, False otherwise
     """
-    try:
-        with wave.open(wave_path, "r") as file:
+
+    # since file is opened using "with", no need to close explicitly
+    with wave.open(wave_path, "r") as file:
+        try:
             return file.getsampwidth() == SUPPORTED_SAMPLE_WIDTH
-    except wave.Error:
-        return False
+        except wave.Error:
+            if file.closed == False:
+                file.close()
+            return False

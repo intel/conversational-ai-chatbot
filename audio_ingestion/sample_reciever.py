@@ -35,14 +35,20 @@ def main():
     socket.setsockopt(zmq.SUBSCRIBE, topic)
 
     print("Writing data to file ..")
-    f = wave.open("recorded.wav", "wb")
-    f.setframerate(16000)
-    f.setnchannels(1)
-    f.setsampwidth(2)
 
-    while True:
-        # receive frames here
-        f.writeframes(recv_array(socket))
+    # since file is opened using "with", no need to close explicitly
+    with wave.open("recorded.wav", "wb") as f:
+        try:
+            f.setframerate(16000)
+            f.setnchannels(1)
+            f.setsampwidth(2)
+
+            while True:
+                # receive frames here
+                f.writeframes(recv_array(socket))
+        except:
+            if f.closed == False:
+                f.close()
 
 
 if __name__ == "__main__":

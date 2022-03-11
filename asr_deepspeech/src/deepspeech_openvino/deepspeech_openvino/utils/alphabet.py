@@ -13,21 +13,27 @@ import codecs
 
 def load_alphabet(filename):
     characters = []
+    # since file is opened using "with", no need to close explicitly
     with codecs.open(filename, "r", "utf-8") as f:
-        for line in f:
-            line = line.rstrip("\r\n")
-            if line == "":  # empty line ends the alphabet
-                break
-            if line[0] == "#":  # comment
-                continue
-            if line.startswith("\\s"):  # "\s" for space as the first character
-                line = " " + line[2:]
-            elif (
-                line[0] == "\\"
-            ):  # escaping, to enter "#" or "\" as the first character
-                line = line[1:]
-            characters.append(line)
+        try:
+            for line in f:
+                line = line.rstrip("\r\n")
+                if line == "":  # empty line ends the alphabet
+                    break
+                if line[0] == "#":  # comment
+                    continue
+                if line.startswith("\\s"):  # "\s" for space as the first character
+                    line = " " + line[2:]
+                elif (
+                    line[0] == "\\"
+                ):  # escaping, to enter "#" or "\" as the first character
+                    line = line[1:]
+                characters.append(line)
+        except:
+            if f.closed == False:
+                f.close()
     return characters
+
 
 
 def get_default_alphabet():

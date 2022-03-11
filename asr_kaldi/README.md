@@ -31,12 +31,12 @@ make kaldi_asr
 
 ### Download models
 
-The models are hosted by OpenVINO&trade;. We can use `model downloader` of OpenVINO&trade model zoo; to download the model. The yml file with location of the model is kept at `<repo-root>/asr_kaldi/src/model/lspeech_s5_ext.yml`. 
+The models are hosted by OpenVINO&trade;. We can use `model downloader` of OpenVINO&trade model zoo; to download the model. The yml file with location of the model is kept at `<repo-root>/asr_kaldi/src/model/lspeech_s5_ext.yml`.
 
 A utility script to download the model has been kept at `<repo-root>/asr_kaldi/scripts/download_model.sh`. It can be used as:
 
 ```bash
-# make sure python3-venv is installed 
+# make sure python3-venv is installed
 <repo-root>/asr_kaldi/scripts/download_model.sh -c <repo-root>/asr_kaldi/src/model/lspeech_s5_ext.yml -d some_model_path
 ```
 
