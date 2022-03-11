@@ -6,18 +6,18 @@ For this demo, [create credentials here](https://apisandbox.openbankproject.com/
 It hosts functionality to *create-session, publish session-id, verify session-id and get obp jwt token*. Those functionalities are accessible over different sockets/ports.
 
 *Verify Session ID:*
-How the client should avail this feature. 
+How the client should avail this feature.
 
 
 Easy Way
 ```
 INPUT_ADDR = .. # depends on which component to connect
-AUTHZ_RPC_SERVER_ADDR = .. # check env var SESSION_ADDR passed to authz 
+AUTHZ_RPC_SERVER_ADDR = .. # check env var SESSION_ADDR passed to authz
 
 from zmq_integration_lib import get_inpad
 ip = get_inpad(INPUT_ADDR, INPUT_TOPIC, AUTHZ_RPC_SERVER_ADDR)
 for d,e in ip.data_and_event_generator():
-    print (d) 
+    print (d)
 
 ```
 
@@ -77,17 +77,17 @@ NOTE: The logout rpc doesn't invalidate the jwt token from open bankproject serv
 
 ## For development
 
-Set these env variables and run authz. In DEVELOPMENT mode, credentials can be passed via env vars. This is not possible in production mode. 
+Set these env variables and run authz. In DEVELOPMENT mode, credentials can be passed via env vars. This is not possible in production mode.
 
 ```
 set TOKEN_SERVER_ADDR=tcp://*:6901
 set OUTPUT_ADDR=tcp://*:6700
-set OUTPUT_TOPIC=userloggedin 
-set SESSION_ADDR=tcp://*:6900 
-set DEVELOPMENT=1 
+set OUTPUT_TOPIC=userloggedin
+set SESSION_ADDR=tcp://*:6900
+set DEVELOPMENT=1
 set D_USERNAME=...
 set D_PASS=...
-set D_APIKEY=... 
+set D_APIKEY=...
 set D_TOKEN=...
 set LOG_LEVEL=debug
 python main.py
@@ -95,7 +95,7 @@ python main.py
 
 ## Pre-requisites
 - 0MQ
-- OpenVINO&trade; 2020.4
+- OpenVINO&trade; 2021.3
 - python3
 
 ## Data Formats
