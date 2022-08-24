@@ -1,7 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
-FROM python:3.6-slim-buster
+FROM python:3.11.0rc1-slim-buster
 LABEL maintainer Shivdeep Singh <shivdeep.singh@intel.com>
 
 ARG PIP_INDEX_URL=https://pypi.org/simple
