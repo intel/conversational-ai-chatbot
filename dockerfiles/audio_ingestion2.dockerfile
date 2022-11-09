@@ -14,6 +14,7 @@ WORKDIR /app
 
 RUN apt update -y \
     && apt  install -y  python3-pip swig git libpulse-dev libasound2-dev python3-pyaudio
+RUN pip3 install --upgrade pip
 RUN pip3 install -r /app/requirements.txt
 
 # Downloading Respeaker SDK
