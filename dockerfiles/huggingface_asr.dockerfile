@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # set base image (host OS)
-FROM python:3.6-slim-buster
+FROM python:3.10-slim-buster
 LABEL maintainer Vinay <vinay.g@intel.com>
 
 ARG PIP_INDEX_URL=https://pypi.org/simple
