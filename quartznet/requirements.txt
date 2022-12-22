@@ -1,5 +1,4 @@
 pyarrow==1.0.0
 datasets
 librosa==0.8.1
-torch==1.9.1
 envparse
